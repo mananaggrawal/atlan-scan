@@ -54,7 +54,7 @@ const FAQ = [
   { q: "Will two scans of the same folder match?",
     a: "Unchanged files give back the same report — a skill\u0027s audit is keyed to the bytes it was read from, so a re-scan costs nothing and returns what it returned before. Change a file and that skill is read again. Every category is reported either way, cleared or not, so the diff is about your skills and not about ours." },
   { q: "What do I pay for?",
-    a: "Nothing, for skills \u2014 every finding, every quoted line, every fix. MCPs, plugins, sub-agents and continuous monitoring ship with Atlan Registry." },
+    a: "Nothing, for skills \u2014 every finding, every quoted line, every fix. MCP, plugin and sub-agent scanning are not built yet; tell us which one you want and it moves up the queue. Continuous monitoring across every agent in a company is what Atlan Registry already does." },
   { q: "Who does the reading?",
     a: "A model, working from a published skill you can read: skills/skill-audit/SKILL.md in our repo. It is the same instructions the hosted scanner uses, so you can run the audit yourself in Claude Code and get the same report without us. Every quote it produces is checked back against your file, and anything that does not match is dropped before you see it." },
   { q: "Why sign in to see the detail?",

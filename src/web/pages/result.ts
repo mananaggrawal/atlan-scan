@@ -87,6 +87,30 @@ function categoryCard(c: CategoryResult, r: ScanResult, full: boolean): string {
  * Counts are shown to everyone; which file or skill it was is detail, and detail
  * sits behind the sign-in like the findings do.
  */
+/**
+ * Name the limit that produced a caveat, when it was set below what this build
+ * expects.
+ *
+ * Both limits are environment variables, and an instance configured with a
+ * testing profile produces a report that is thin, quiet and entirely plausible:
+ * a few findings, some files read in part, nothing obviously wrong. The counts
+ * above are the honest half; this is the actionable half. Said only when the
+ * setting is actually below the default, so a correctly configured report does
+ * not carry a number nobody needs.
+ */
+function limitNote(a: ScanResult["audit"], which: "read" | "output"): string {
+  const l = a.limits;
+  if (!l) return "";
+  if (which === "read") {
+    return l.readDefault > 0 && l.readChars > 0 && l.readChars < l.readDefault
+      ? ` This run was configured to read ${l.readChars.toLocaleString()} characters per skill, not the usual ${l.readDefault.toLocaleString()}.`
+      : "";
+  }
+  return l.outputDefault > 0 && l.outputTokens > 0 && l.outputTokens < l.outputDefault
+    ? ` This run was configured to let the auditor write ${l.outputTokens.toLocaleString()} tokens, not the usual ${l.outputDefault.toLocaleString()}.`
+    : "";
+}
+
 function caveats(r: ScanResult, full: boolean): string {
   const a = r.audit;
 
@@ -118,10 +142,16 @@ function caveats(r: ScanResult, full: boolean): string {
       a.failures.map((x) => `${short(x.skill, 60)} (${short(x.reason, 80)})`),
     )}. Not counted as clear.`);
   }
-  if (r.partial.length) {
-    lines.push(`${plural(r.partial.length, "audit")} stopped at the model's output limit${named(
-      r.partial.map((x) => `${short(x.skill, 60)}, after ${plural(x.kept, "finding")}`),
-    )}. What it had written is below; the rest was never written.`);
+  // Two different failures used to be printed as one sentence about the model's
+  // output limit. They are grouped by reason now, because "raise the ceiling" and
+  // "the scanner could not read the answer" are not the same instruction.
+  for (const reason of [...new Set(r.partial.map((x) => x.reason ?? "the model's output limit"))]) {
+    const group = r.partial.filter((x) => (x.reason ?? "the model's output limit") === reason);
+    lines.push(`${plural(group.length, "audit")} came back incomplete — ${esc(short(reason, 70))}${named(
+      group.map((x) => `${short(x.skill, 60)}, after ${plural(x.kept, "finding")}`),
+    )}. What was written is below; the rest was not.${
+      reason === "the model's output limit" ? limitNote(a, "output") : ""
+    }`);
   }
   if (r.notFullyRead.length) {
     // Named worst-first: the file that lost the most characters is the one a reader
@@ -129,7 +159,7 @@ function caveats(r: ScanResult, full: boolean): string {
     const worst = [...r.notFullyRead].sort((a, b) => b.of - b.shown - (a.of - a.shown));
     lines.push(`${plural(r.notFullyRead.length, "file")} shown only in part${named(
       worst.map((x) => `${shortPath(x.path)} (${x.shown.toLocaleString()} of ${x.of.toLocaleString()} chars)`),
-    )}. What was not shown was not audited.`);
+    )}. What was not shown was not audited.${limitNote(a, "read")}`);
   }
   if (r.unreadable.length) {
     lines.push(`${plural(r.unreadable.length, "file")} could not be read at all${named(
@@ -154,7 +184,11 @@ function rail(r: ScanResult, full: boolean, isPublic = false): string {
        <div class="kv"><span>Permission findings</span><b>${grants}</b></div>
        <div class="kv"><span>Listing metadata</span><b>${r.library.listingChars.toLocaleString()}c</b></div>
        <div class="kv"><span>Audited by</span><b>${esc(r.audit.model)}</b></div>
-       <div class="kv"><span>Claims discarded</span><b>${r.audit.dropped}</b></div>`
+       <div class="kv"><span>Claims discarded</span><b>${r.audit.dropped}</b></div>
+       ${r.audit.limits && r.audit.limits.readChars > 0
+         ? `<div class="kv"><span>Read per skill</span><b>${r.audit.limits.readChars.toLocaleString()}c</b></div>
+            <div class="kv"><span>Auditor output cap</span><b>${r.audit.limits.outputTokens.toLocaleString()}t</b></div>`
+         : ""}`
     : lockRow(r.runId, "Sign in with Google");
 
   return `<aside class="rail">

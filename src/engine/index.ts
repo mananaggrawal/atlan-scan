@@ -19,6 +19,7 @@ export interface ScanInput {
 const NO_AUDIT: AuditReport = {
   ran: false, model: REVIEW_MODEL, cached: 0, reviewed: 0, dropped: 0,
   failures: [], clipped: [], partial: [], findings: [], usage: { input: 0, output: 0, cacheWrite: 0, cacheRead: 0 },
+  limits: { readChars: 0, readDefault: 0, outputTokens: 0, outputDefault: 0 },
 };
 
 /**
@@ -84,6 +85,7 @@ export function assemble({ files, source }: ScanInput, audit: AuditReport): Scan
     failures: audit.failures,
     findings: audit.findings,
     usage: audit.usage,
+    limits: audit.limits,
   };
 
   return {

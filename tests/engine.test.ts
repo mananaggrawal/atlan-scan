@@ -36,6 +36,7 @@ const NO_AUDIT: AuditReport = {
   ran: false, model: "test", cached: 0, reviewed: 0, dropped: 0,
   failures: [], clipped: [], partial: [], findings: [],
   usage: { input: 0, output: 0, cacheWrite: 0, cacheRead: 0 },
+  limits: { readChars: 160_000, readDefault: 160_000, outputTokens: 16_000, outputDefault: 16_000 },
 };
 
 function auditWith(findings: Finding[]): AuditReport {
@@ -153,7 +154,7 @@ test("assemble: findings sort worst-first and roll up into totals", () => {
 });
 
 test("assemble: a truncated audit is reported as partial, never as complete", () => {
-  const audit: AuditReport = { ...auditWith([finding()]), partial: [{ skill: "deploy-helper", kept: 1 }] };
+  const audit: AuditReport = { ...auditWith([finding()]), partial: [{ skill: "deploy-helper", kept: 1, reason: "the model's output limit" }] };
   const r = assemble({ files: [f("deploy-helper/SKILL.md", SKILL)], source: { kind: "upload", label: "t" } }, audit);
 
   assert.equal(r.partial.length, 1);
@@ -199,7 +200,7 @@ test("the page survives output no designer would have chosen", () => {
         finding({ title: "T".repeat(90), evidence: wall, why: url, fix: wall, file: `${"deep/".repeat(20)}SKILL.md` }),
         finding({ severity: "info", categoryId: "library", title: "<script>alert(1)</script>", evidence: "# Deploy", why: url, fix: url }),
       ]),
-      partial: [{ skill: wall, kept: 99 }],
+      partial: [{ skill: wall, kept: 99, reason: wall }],
       clipped: [{ skill: wall, path: `${"deep/".repeat(20)}big.md`, shown: 1, of: 9_999_999 }],
     },
   );

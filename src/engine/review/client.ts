@@ -17,8 +17,28 @@ const endpoint = (): string => process.env["SCAN_REVIEW_ENDPOINT"] ?? "https://a
  * whole report rather than a semantic footnote to it, so this has to cover a real
  * finding list — a badly-written skill legitimately produces a dozen.
  */
-const MAX_TOKENS = Number(process.env["SCAN_REVIEW_MAX_TOKENS"] ?? 16_000);
-const TIMEOUT_MS = Number(process.env["SCAN_REVIEW_TIMEOUT_MS"] ?? 45_000);
+export const DEFAULT_MAX_TOKENS = 16_000;
+/** Read per call, like the endpoint: the report states this number, so it must be the live one. */
+export const MAX_TOKENS = (): number => Number(process.env["SCAN_REVIEW_MAX_TOKENS"] ?? DEFAULT_MAX_TOKENS);
+/**
+ * How long one call may take, derived from what it is allowed to write rather
+ * than fixed.
+ *
+ * Generation time is roughly linear in output tokens, so a fixed timeout is
+ * wrong at both ends: generous enough for a 16,000-token answer, it lets a
+ * wedged call hold a worker for a minute; tight enough to fail fast, it aborts
+ * the dirtiest skill in the library — the one with the most to say — just before
+ * it finishes. That failure is reported honestly ("the reviewer timed out", never
+ * counted as clear), which makes it visible but no less lost.
+ *
+ * So: a fixed handshake allowance plus a per-token budget, capped. Lower the
+ * output ceiling and the timeout follows it down on its own.
+ */
+const TIMEOUT_MS = (): number => {
+  const explicit = process.env["SCAN_REVIEW_TIMEOUT_MS"];
+  if (explicit) return Number(explicit);
+  return Math.min(180_000, 20_000 + MAX_TOKENS() * 10);
+};
 
 export function reviewEnabled(): boolean {
   return Boolean(process.env["ANTHROPIC_API_KEY"]);
@@ -39,8 +59,14 @@ export interface Usage {
 export interface ReviewCall {
   json: unknown;
   usage: Usage;
-  /** The model ran out of output budget before finishing. What came back is partial. */
-  truncated: boolean;
+  /**
+   * Why this answer is incomplete, or null when it is not. Kept as a reason rather
+   * than a boolean because the two causes need different fixes and must not be
+   * confused: "the model's output limit" is a ceiling to raise, while "an answer
+   * only partly readable" is a bug here. Reporting the second as the first is how
+   * a parsing failure spent two days looking like a model that talks too much.
+   */
+  incomplete: "the model's output limit" | "an answer that could only be partly read" | null;
 }
 
 /** Per-million-token prices, USD. Override when changing model. */
@@ -133,22 +159,49 @@ export function salvageFindings(body: string): Record<string, unknown>[] | null 
   return out;
 }
 
+/**
+ * Unwrap a fenced answer by stripping the OPENING fence line and the LAST closing
+ * fence — never by matching the nearest pair.
+ *
+ * This is the bug that cost the most. A finding that quotes a markdown code block
+ * puts ``` inside a JSON string, and the non-greedy match this used to do ended
+ * the answer right there: the parse failed, salvage kept only the findings written
+ * before the quote, and the run was reported as having stopped at the model's
+ * output limit. The model had finished normally. On one real skill that turned
+ * **eighteen findings into two** — and since the quote has to come from the file
+ * being audited, it fires on any skill whose SKILL.md contains a fenced example,
+ * which is most of them.
+ */
+function unfence(raw: string): string {
+  if (!raw.startsWith("```")) return raw;
+  const firstLine = raw.indexOf("\n");
+  if (firstLine === -1) return raw;
+  const close = raw.lastIndexOf("```");
+  return raw.slice(firstLine + 1, close > firstLine ? close : undefined).trim();
+}
+
+/** What came back, and whether it was all of it. */
+export interface Extracted {
+  json: unknown;
+  /** Set when only part of the answer could be read. The findings before the break are kept. */
+  salvaged: boolean;
+}
+
 /** Pull the JSON object out of a model turn that may have wrapped it in a fence. */
-export function extractJson(text: string): unknown {
-  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/);
-  const body = (fenced?.[1] ?? text).trim();
+export function extractJson(text: string): Extracted {
+  const body = unfence(text.trim());
   const start = body.indexOf("{");
   if (start === -1) throw new ReviewUnavailable("the reviewer did not return JSON");
   const end = body.lastIndexOf("}");
   if (end > start) {
     try {
-      return JSON.parse(body.slice(start, end + 1));
+      return { json: JSON.parse(body.slice(start, end + 1)), salvaged: false };
     } catch {
       // Fall through to salvage.
     }
   }
   const salvaged = salvageFindings(body.slice(start));
-  if (salvaged && salvaged.length) return { findings: salvaged, truncated: true };
+  if (salvaged && salvaged.length) return { json: { findings: salvaged }, salvaged: true };
   throw new ReviewUnavailable("the reviewer returned JSON we could not parse");
 }
 
@@ -160,7 +213,7 @@ export async function askReviewer(system: string, user: string): Promise<ReviewC
   }
 
   const ctl = new AbortController();
-  const timer = setTimeout(() => ctl.abort(), TIMEOUT_MS);
+  const timer = setTimeout(() => ctl.abort(), TIMEOUT_MS());
   try {
     const res = await fetch(endpoint(), {
       method: "POST",
@@ -172,7 +225,7 @@ export async function askReviewer(system: string, user: string): Promise<ReviewC
       },
       body: JSON.stringify({
         model: REVIEW_MODEL,
-        max_tokens: MAX_TOKENS,
+        max_tokens: MAX_TOKENS(),
         temperature: 0,
         // The system prompt is byte-identical on every call, so it is marked for
         // caching. It is the whole skill-audit skill now rather than a short review
@@ -203,11 +256,15 @@ export async function askReviewer(system: string, user: string): Promise<ReviewC
     // Counted before the JSON is parsed: the call was billed whether or not we
     // can use what came back.
     spent += costOf(usage);
-    const json = extractJson(text);
-    // An answer cut off at the output ceiling is incomplete by definition. Whatever
-    // was salvaged is still reported, but the run has to say the auditor did not finish.
-    const truncated = body.stop_reason === "max_tokens" || Boolean((json as { truncated?: boolean }).truncated);
-    return { json, usage, truncated };
+    const { json, salvaged } = extractJson(text);
+    // stop_reason is ground truth; salvage is our own inability to read the answer.
+    // Whatever was recovered is still reported, but the run has to say which it was.
+    const incomplete = body.stop_reason === "max_tokens"
+      ? ("the model's output limit" as const)
+      : salvaged
+        ? ("an answer that could only be partly read" as const)
+        : null;
+    return { json, usage, incomplete };
   } catch (err) {
     if (err instanceof ReviewUnavailable) throw err;
     if ((err as Error).name === "AbortError") throw new ReviewUnavailable("the reviewer timed out");

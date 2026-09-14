@@ -132,8 +132,11 @@ quotes one of the two.
 
 ${WIRE}`;
 
+/** What the per-skill budget is meant to be. An instance set below this is misconfigured, and says so. */
+export const DEFAULT_SKILL_CHARS = 160_000;
+
 /** Per-skill character budget across all its files. A clipped file is reported, never silently dropped. */
-export const MAX_SKILL_CHARS = Number(process.env["SCAN_REVIEW_MAX_CHARS"] ?? 160_000);
+export const MAX_SKILL_CHARS = Number(process.env["SCAN_REVIEW_MAX_CHARS"] ?? DEFAULT_SKILL_CHARS);
 
 /**
  * The floor every readable file is guaranteed, so long as the budget can cover one
@@ -196,6 +199,13 @@ export function allocate(sizes: number[], weights: number[], budget: number): nu
 
 export interface SkillDocument {
   text: string;
+  /**
+   * The budget this document was actually built to, after the per-file floor.
+   * Surfaced because the number is the explanation: a report saying twenty-one
+   * files were read in part is honest but unactionable, while the same report
+   * naming a 35,400-char budget points straight at the setting that caused it.
+   */
+  budget: number;
   /** Files clipped for length, with the char count that was shown. Surfaced as not-fully-read. */
   clipped: { path: string; shown: number; of: number }[];
   /** Files that could not be decoded at all. Named to the model rather than omitted. */
@@ -269,6 +279,7 @@ links to files not in this upload: ${
 </facts>`;
 
   return {
+    budget: effective,
     text: `Skill name: ${skill.name}
 Manifest: ${skill.skillPath}
 

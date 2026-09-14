@@ -81,7 +81,8 @@ function print(r: ScanResult): void {
     console.log(`  ${C.yellow("!")} ${C.b("Not fully audited")}`);
     for (const x of r.audit.failures) console.log(`      ${C.grey(`${x.skill} — ${x.reason}`)}`);
     for (const x of r.partial) {
-      console.log(`      ${C.grey(`${x.skill} — the auditor stopped at its output limit after ${x.kept} finding${x.kept === 1 ? "" : "s"}`)}`);
+      const why = x.reason ?? "the model's output limit";
+      console.log(`      ${C.grey(`${x.skill} — incomplete after ${x.kept} finding${x.kept === 1 ? "" : "s"}: ${why}`)}`);
     }
     // A file shown only in part is the same admission as a skill that was skipped,
     // and the web report has always made it. The CLI had not, so a clipped file
@@ -92,6 +93,16 @@ function print(r: ScanResult): void {
       console.log(`      ${C.grey(`${x.path} — shown to the auditor in part only, ${x.shown.toLocaleString()} of ${x.of.toLocaleString()} chars`)}`);
     }
     if (part.length > 6) console.log(`      ${C.grey(`…and ${part.length - 6} more file${part.length - 6 === 1 ? "" : "s"} shown in part`)}`);
+    // The counts above are the symptom. When a limit was set below what this build
+    // expects, it is also the cause, and saying so is the difference between a
+    // report someone reads and a report someone can act on.
+    const lim = r.audit.limits;
+    if (lim && lim.readChars > 0 && lim.readChars < lim.readDefault) {
+      console.log(`      ${C.grey(`Read budget was ${lim.readChars.toLocaleString()} chars per skill, not the usual ${lim.readDefault.toLocaleString()} — unset SCAN_REVIEW_MAX_CHARS`)}`);
+    }
+    if (lim && lim.outputTokens > 0 && lim.outputTokens < lim.outputDefault) {
+      console.log(`      ${C.grey(`Auditor output cap was ${lim.outputTokens.toLocaleString()} tokens, not the usual ${lim.outputDefault.toLocaleString()} — unset SCAN_REVIEW_MAX_TOKENS`)}`);
+    }
     console.log(`      ${C.grey("These were not counted as clear.")}`);
     console.log("");
   }

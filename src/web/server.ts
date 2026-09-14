@@ -227,14 +227,16 @@ export function makeServer() {
 
     if (req.method === "POST" && path === "/api/interest") {
       const body = new URLSearchParams((await readBody(req)).toString("utf8"));
-      console.log("[registry-interest]", JSON.stringify({
+      console.log("[scan-interest]", JSON.stringify({
         feature: body.get("feature"), email: body.get("email"),
-        name: `${body.get("first") ?? ""} ${body.get("last") ?? ""}`.trim(), at: new Date().toISOString(),
+        name: `${body.get("first") ?? ""} ${body.get("last") ?? ""}`.trim(),
+        note: (body.get("note") ?? "").trim().slice(0, 500) || null,
+        at: new Date().toISOString(),
       }));
       return send(res, 200, page({
         title: "Thanks — Atlan Scan", user,
         body: `<div class="narrow" style="padding:80px 0;text-align:center"><h1 style="font-size:36px">Noted.</h1>
-        <p class="lede" style="margin-top:14px">We'll email you once ${esc(body.get("feature") || "that")} scanning ships.</p>
+        <p class="lede" style="margin-top:14px">You are on the list for ${esc(body.get("feature") || "that")} scanning. It is not built yet \u2014 votes like yours decide what we build next, and you get one email when it ships.</p>
         <p style="margin-top:24px"><a class="btn btn-primary" href="/scan">Back to scanning</a></p></div>`,
       }));
     }

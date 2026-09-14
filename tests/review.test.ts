@@ -126,6 +126,46 @@ test("allocate: the manifest is weighted, not reserved", () => {
   assert.ok(other! > 0, "but never nothing");
 });
 
+/**
+ * The regression that turned eighteen findings into two on a real skill: a quoted
+ * markdown fence inside a finding ended the fence match early, so the answer
+ * parsed as garbage, salvage kept what was written before the quote, and the run
+ * was blamed on the model's output limit. The model had finished normally.
+ */
+test("a finding that quotes a code fence does not truncate the answer", () => {
+  const answer = [
+    "```json",
+    '{"findings":[',
+    '{"file":"a/SKILL.md","categoryId":"metadata","severity":"low","title":"one",',
+    '"evidence":"```\\nrun.sh --input x\\n```\\nthen inspect","why":"w","fix":"f"},',
+    '{"file":"a/SKILL.md","categoryId":"metadata","severity":"low","title":"two",',
+    '"evidence":"second","why":"w","fix":"f"}',
+    "]}",
+    "```",
+  ].join("\n");
+
+  const { json, salvaged } = extractJson(answer);
+  assert.equal(salvaged, false, "the answer was whole — it must not be reported as partial");
+  assert.equal((json as { findings: unknown[] }).findings.length, 2, "both findings survive the quoted fence");
+});
+
+test("a genuinely cut-off answer still salvages what was written, and says so", () => {
+  const cut = '{"findings":[{"file":"a/SKILL.md","categoryId":"metadata","severity":"low","title":"one","evidence":"e","why":"w","fix":"f"},{"file":"a/SKILL.md","categoryId":"met';
+  const { json, salvaged } = extractJson(cut);
+  assert.equal(salvaged, true);
+  assert.equal((json as { findings: unknown[] }).findings.length, 1);
+});
+
+test("the document reports the budget it was actually built to", () => {
+  const skill = one();
+  assert.equal(buildSkillDocument(skill, skillFacts(skill), 160_000).budget, 160_000);
+  // A folder with more files than the budget has floors for raises it, and says so.
+  const many = [f("wide/SKILL.md", SKILL)];
+  for (let i = 0; i < 100; i++) many.push(f(`wide/n-${i}.md`, "y".repeat(50)));
+  const wide = one(many);
+  assert.ok(buildSkillDocument(wide, skillFacts(wide), 1_000).budget > 1_000);
+});
+
 test("the model is told not to quote a file it was only shown part of", () => {
   assert.ok(/clipped=/.test(SYSTEM));
   assert.ok(/Do not report a finding against text you were not shown/.test(SYSTEM));
@@ -297,6 +337,6 @@ test("corpus covers every readable file of every skill", () => {
 });
 
 test("extractJson survives a model that wrapped its answer in prose or a fence", () => {
-  assert.deepEqual(extractJson('```json\n{"findings":[]}\n```'), { findings: [] });
-  assert.deepEqual(extractJson('Here you go: {"findings":[]}'), { findings: [] });
+  assert.deepEqual(extractJson('```json\n{"findings":[]}\n```').json, { findings: [] });
+  assert.deepEqual(extractJson('Here you go: {"findings":[]}').json, { findings: [] });
 });

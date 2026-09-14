@@ -201,8 +201,12 @@ export interface ScanResult {
   library: LibraryStats;
   /** Files shown to the auditor only in part, because the skill exceeded the per-skill budget. */
   notFullyRead: { skill: string; path: string; shown: number; of: number }[];
-  /** Skills whose audit was cut off at the model's output ceiling. Partial, and said to be. */
-  partial: { skill: string; kept: number }[];
+  /**
+   * Skills whose audit did not come back whole. `reason` says which failure it was —
+   * the model's output ceiling, or an answer the scanner could only partly read.
+   * Optional so runs stored before the distinction existed still render.
+   */
+  partial: { skill: string; kept: number; reason?: string }[];
   /**
    * The audit itself — who read the files, how many were read, what was dropped
    * for failing verification, and what it cost. Not a footnote to the report:
@@ -222,6 +226,12 @@ export interface ReviewSummary {
   findings: Finding[];
   /** Tokens this run spent. Kept so cost is visible rather than inferred from a bill. */
   usage?: { input: number; output: number; cacheWrite: number; cacheRead: number };
+  /**
+   * What this run was allowed to read and write, and what it should have been.
+   * Optional because runs stored before this existed have no such record — and a
+   * run that cannot say what its limits were must not claim they were the defaults.
+   */
+  limits?: { readChars: number; readDefault: number; outputTokens: number; outputDefault: number };
 }
 
 export type ENGINE_VERSION_T = string;

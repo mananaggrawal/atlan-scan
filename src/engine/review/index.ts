@@ -2,10 +2,10 @@ import { createHash } from "node:crypto";
 import type { Finding, SkillDoc } from "../types.ts";
 import { libraryFacts, skillFacts } from "../facts.ts";
 import {
-  PROMPT_VERSION, SYSTEM, LIBRARY_SYSTEM,
+  PROMPT_VERSION, SYSTEM, LIBRARY_SYSTEM, DEFAULT_SKILL_CHARS,
   buildSkillDocument, buildLibraryDocument,
 } from "./prompt.ts";
-import { REVIEW_MODEL, ReviewUnavailable, askReviewer, reviewEnabled, type Usage } from "./client.ts";
+import { MAX_TOKENS, DEFAULT_MAX_TOKENS, REVIEW_MODEL, ReviewUnavailable, askReviewer, reviewEnabled, type Usage } from "./client.ts";
 import { verifyLibrary, verifySkill } from "./verify.ts";
 
 export { reviewEnabled, REVIEW_MODEL, PROMPT_VERSION };
@@ -33,16 +33,29 @@ export interface AuditReport {
    * the most to say is the one that hits this, and losing it silently would be
    * the worst failure this scanner could have.
    */
-  partial: { skill: string; kept: number }[];
+  partial: { skill: string; kept: number; reason: string }[];
   findings: Finding[];
   /** Tokens this run actually spent, summed across calls. Cached skills cost none. */
   usage: Usage;
+  /**
+   * The limits this run was given. Reported rather than assumed: both are
+   * environment variables, so an instance can be configured to read a fraction
+   * of each skill and stop a fraction of the way through the answer, and every
+   * symptom of that looks like a quiet, thin, plausible report.
+   */
+  limits: { readChars: number; readDefault: number; outputTokens: number; outputDefault: number };
 }
 
 const NO_USAGE: Usage = { input: 0, output: 0, cacheWrite: 0, cacheRead: 0 };
+const limits = (): AuditReport["limits"] => ({
+  readChars: 0,
+  readDefault: DEFAULT_SKILL_CHARS,
+  outputTokens: MAX_TOKENS(),
+  outputDefault: DEFAULT_MAX_TOKENS,
+});
 const EMPTY: AuditReport = {
   ran: false, model: REVIEW_MODEL, cached: 0, reviewed: 0, dropped: 0,
-  failures: [], clipped: [], partial: [], findings: [], usage: { ...NO_USAGE },
+  failures: [], clipped: [], partial: [], findings: [], usage: { ...NO_USAGE }, limits: limits(),
 };
 
 /**
@@ -80,11 +93,11 @@ const CONCURRENCY = 4;
 const maxSkills = (): number => Number(process.env["SCAN_REVIEW_MAX_SKILLS"] ?? 25);
 
 export async function auditSkills(skills: SkillDoc[], cache?: ReviewCache): Promise<AuditReport> {
-  if (!reviewEnabled() || !skills.length) return { ...EMPTY };
+  if (!reviewEnabled() || !skills.length) return { ...EMPTY, limits: limits() };
 
   const out: AuditReport = {
     ran: true, model: REVIEW_MODEL, cached: 0, reviewed: 0, dropped: 0,
-    failures: [], clipped: [], partial: [], findings: [], usage: { ...NO_USAGE },
+    failures: [], clipped: [], partial: [], findings: [], usage: { ...NO_USAGE }, limits: limits(),
   };
 
   const spend = (u: Usage): void => {
@@ -121,6 +134,9 @@ export async function auditSkills(skills: SkillDoc[], cache?: ReviewCache): Prom
 
       try {
         const doc = buildSkillDocument(skill, skillFacts(skill));
+        // The largest budget any skill in this run was built to. They differ only
+        // by file count, and the biggest is the one worth naming on the report.
+        out.limits.readChars = Math.max(out.limits.readChars, doc.budget);
         for (const c of doc.clipped) out.clipped.push({ skill: skill.name, ...c });
         const call = await askReviewer(SYSTEM, doc.text);
         spend(call.usage);
@@ -128,9 +144,9 @@ export async function auditSkills(skills: SkillDoc[], cache?: ReviewCache): Prom
         out.reviewed++;
         out.dropped += dropped.length;
         out.findings.push(...findings);
-        if (call.truncated) out.partial.push({ skill: skill.name, kept: findings.length });
+        if (call.incomplete) out.partial.push({ skill: skill.name, kept: findings.length, reason: call.incomplete });
         // A partial answer is not cached: the next run should get the chance to finish.
-        if (!call.truncated) cache?.put(key, findings);
+        else cache?.put(key, findings);
       } catch (err) {
         const reason = err instanceof ReviewUnavailable ? err.message : (err as Error).message;
         // A skill the auditor could not read is reported as unaudited. It is never
@@ -157,7 +173,7 @@ export async function auditSkills(skills: SkillDoc[], cache?: ReviewCache): Prom
         const { findings, dropped } = verifyLibrary(skills, call.json);
         out.dropped += dropped.length;
         out.findings.push(...findings);
-        if (call.truncated) out.partial.push({ skill: "(the folder as a whole)", kept: findings.length });
+        if (call.incomplete) out.partial.push({ skill: "(the folder as a whole)", kept: findings.length, reason: call.incomplete });
         else cache?.put(lkey, findings);
       } catch (err) {
         const reason = err instanceof ReviewUnavailable ? err.message : (err as Error).message;

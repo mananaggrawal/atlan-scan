@@ -34,6 +34,24 @@ rows.push([
 ]);
 if (process.env["ANTHROPIC_API_KEY"]) {
   rows.push(["  audit ceiling", `${process.env["SCAN_REVIEW_MAX_SKILLS"] ?? 25} skills per run`]);
+  // These two are how a working build produces a thin report. Set below the
+  // default, every skill is read in part and every answer stops early, and the
+  // result looks like a quiet library rather than a throttled scanner. Flagged
+  // here so the machine says so before anyone reads a report and believes it.
+  const readChars = Number(process.env["SCAN_REVIEW_MAX_CHARS"] ?? 160_000);
+  const outTokens = Number(process.env["SCAN_REVIEW_MAX_TOKENS"] ?? 16_000);
+  rows.push([
+    "  read per skill",
+    readChars < 160_000
+      ? `${readChars.toLocaleString()} chars — BELOW the 160,000 default; skills will be read in part (unset SCAN_REVIEW_MAX_CHARS)`
+      : `${readChars.toLocaleString()} chars`,
+  ]);
+  rows.push([
+    "  auditor output",
+    outTokens < 16_000
+      ? `${outTokens.toLocaleString()} tokens — BELOW the 16,000 default; audits will stop early (unset SCAN_REVIEW_MAX_TOKENS)`
+      : `${outTokens.toLocaleString()} tokens`,
+  ]);
   rows.push([
     "  audit budget",
     process.env["SCAN_REVIEW_BUDGET_USD"]

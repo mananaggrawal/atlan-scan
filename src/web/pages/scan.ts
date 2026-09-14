@@ -115,7 +115,7 @@ export function scanPage(user: User | null, lastRunId: string | null): string {
           <span class="ic">${t.icon}</span>
           <span class="t">${t.t}</span>
           <span class="d">${t.d}</span>
-          ${t.on ? `<span class="tagfree">Free</span>` : `<span class="tagent">Registry plan</span>`}
+          ${t.on ? `<span class="tagfree">Free</span>` : `<span class="tagent">Not built yet</span>`}
         </div>`,
       ).join("")}
     </div>

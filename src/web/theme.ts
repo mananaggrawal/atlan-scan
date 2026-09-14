@@ -246,7 +246,7 @@ footer.bot .disc{max-width:62em;line-height:1.6}
 .lockbtn:hover{background:#000;text-decoration:none;color:#fff}
 
 .ribbon{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:44px 26px 34px;text-align:center;overflow:hidden;margin-top:22px}
-.ribbon::before{content:"Registry plan";position:absolute;left:-52px;top:20px;transform:rotate(-45deg);background:#FBF0C4;color:#7A6410;font-family:var(--mono);font-size:10px;letter-spacing:.1em;padding:6px 60px}
+.ribbon::before{content:"Not built yet";position:absolute;left:-52px;top:20px;transform:rotate(-45deg);background:#FBF0C4;color:#7A6410;font-family:var(--mono);font-size:10px;letter-spacing:.1em;padding:6px 60px}
 .ribbon h3{font-size:23px}
 .ribbon p{font-size:14.5px;color:var(--muted);margin:10px auto 0;max-width:34em;line-height:1.55}
 .ribbon .lk{width:52px;height:52px;margin:0 auto 14px;border-radius:12px;background:var(--blue-soft);display:grid;place-items:center;font-size:23px}
@@ -255,12 +255,13 @@ footer.bot .disc{max-width:62em;line-height:1.6}
 .mask{position:fixed;inset:0;background:rgba(20,20,40,.5);display:none;place-items:center;z-index:60;padding:20px}
 .mask.on{display:grid}
 .modal{background:#fff;border-radius:16px;max-width:430px;width:100%;padding:34px 32px 26px;position:relative;overflow:hidden}
-.modal::before{content:"Registry plan";position:absolute;left:-52px;top:20px;transform:rotate(-45deg);background:#FBF0C4;color:#7A6410;font-family:var(--mono);font-size:10px;letter-spacing:.1em;padding:6px 60px}
+.modal::before{content:"Not built yet";position:absolute;left:-52px;top:20px;transform:rotate(-45deg);background:#FBF0C4;color:#7A6410;font-family:var(--mono);font-size:10px;letter-spacing:.1em;padding:6px 60px}
 .modal .x{position:absolute;top:14px;right:14px;border:1px solid var(--line);background:#fff;border-radius:7px;width:30px;height:30px;cursor:pointer;color:var(--muted);font-size:16px;line-height:1}
 .modal h3{font-size:25px;text-align:center;margin-top:6px}
 .modal>p{font-size:14px;color:var(--muted);text-align:center;margin-top:9px;line-height:1.5}
 .modal .lk{width:60px;height:60px;margin:0 auto;border-radius:14px;background:var(--blue-soft);display:grid;place-items:center;font-size:27px}
-.modal input{width:100%;font-family:var(--body);font-size:14.5px;padding:13px 14px;border:1px solid var(--line);border-radius:9px;background:var(--surface-2);margin-top:11px}
+.modal input,.modal textarea{width:100%;font-family:var(--body);font-size:14.5px;padding:13px 14px;border:1px solid var(--line);border-radius:9px;background:var(--surface-2);margin-top:11px}
+.modal textarea{resize:vertical;line-height:1.45;min-height:64px}
 .modal label.ck{display:flex;gap:10px;align-items:flex-start;font-size:12.5px;color:var(--muted);margin-top:15px;line-height:1.45}
 .modal button.sub2{width:100%;margin-top:16px;background:var(--ink-strong);color:#fff;border:0;border-radius:26px;padding:14px;font-size:15px;font-weight:500;cursor:pointer}
 .modal .fine{font-size:11.5px;color:var(--faint);text-align:center;margin-top:12px}

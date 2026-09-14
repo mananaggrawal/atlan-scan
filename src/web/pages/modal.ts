@@ -1,18 +1,19 @@
-/** The locked-feature capture, in the shape the category has taught people to expect. */
+/** Not a paywall — a queue. These scan types are not built yet; this counts who wants which. */
 export function enterpriseModal(): string {
   return `<div class="mask" id="mask">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="mtitle">
     <button class="x" id="mx" aria-label="Close">×</button>
-    <div class="lk">🔒</div>
-    <h3 id="mtitle">This is a Registry feature</h3>
-    <p id="mbody">MCP, plugin and sub-agent scanning ship with Atlan Registry. Tell us where to send it.</p>
+    <div class="lk">⏳</div>
+    <h3 id="mtitle">Not built yet</h3>
+    <p id="mbody">MCP, plugin and sub-agent scanning are not live yet. Tell us which one you want and we will build it next — we are counting.</p>
     <form method="POST" action="/api/interest">
       <input type="hidden" name="feature" id="mfeature" value="">
       <input type="text" name="first" placeholder="First name" required>
       <input type="text" name="last" placeholder="Last name" required>
       <input type="email" name="email" placeholder="Work email" required>
+      <textarea name="note" id="mnote" rows="2" placeholder="What would you want it to catch? (optional)"></textarea>
       <label class="ck"><input type="checkbox" name="consent" required style="width:auto;margin:3px 0 0">
-        I'd like to hear about Atlan Registry.</label>
+        Email me when it ships.</label>
       <button class="sub2" type="submit">Submit</button>
     </form>
     <p class="fine">One email when it ships. Nothing else.</p>
@@ -22,15 +23,19 @@ export function enterpriseModal(): string {
 
 export const MODAL_SCRIPT = `
 const COPY={
-  'mcp':'MCP scanning — server config, tool definitions and credential handling — ships with Atlan Registry.',
-  'plugin':'Plugin scanning — every bundled skill, command and hook read together — ships with Atlan Registry.',
-  'sub-agent':'Sub-agent scanning — definitions and the tools they are granted — ships with Atlan Registry.',
-  'more':'Continuous re-scanning, your whole team\\'s skills in one inventory, and a policy gate on install.'
+  'mcp':['MCP scanning is not built yet','Server config, tool definitions and credential handling. Tell us you want it and it moves up the queue.'],
+  'plugin':['Plugin scanning is not built yet','Every bundled skill, command and hook read together. Tell us you want it and it moves up the queue.'],
+  'sub-agent':['Sub-agent scanning is not built yet','Agent definitions and the tools they are granted. Tell us you want it and it moves up the queue.'],
+  'more':['Not built yet','Continuous re-scanning, your whole team\\'s library in one inventory, and a policy gate on install. Tell us what you would use.']
 };
 function openModal(kind){
   const m=document.getElementById('mask'); if(!m) return;
   document.getElementById('mfeature').value=kind||'';
-  if(COPY[kind]) document.getElementById('mbody').textContent=COPY[kind];
+  const c=COPY[kind];
+  if(c){ document.getElementById('mtitle').textContent=c[0];
+         document.getElementById('mbody').textContent=c[1];
+         const n=document.getElementById('mnote');
+         if(n) n.placeholder=(kind&&kind!=='more'?'What would you want it to catch? (optional)':'What would you use it for? (optional)'); }
   m.classList.add('on');
 }
 function closeModal(){ document.getElementById('mask').classList.remove('on'); }
