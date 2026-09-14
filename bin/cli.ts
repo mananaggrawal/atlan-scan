@@ -77,12 +77,21 @@ function print(r: ScanResult): void {
       console.log("");
     }
   }
-  if (r.audit.failures.length || r.partial.length) {
+  if (r.audit.failures.length || r.partial.length || r.notFullyRead.length) {
     console.log(`  ${C.yellow("!")} ${C.b("Not fully audited")}`);
     for (const x of r.audit.failures) console.log(`      ${C.grey(`${x.skill} — ${x.reason}`)}`);
     for (const x of r.partial) {
       console.log(`      ${C.grey(`${x.skill} — the auditor stopped at its output limit after ${x.kept} finding${x.kept === 1 ? "" : "s"}`)}`);
     }
+    // A file shown only in part is the same admission as a skill that was skipped,
+    // and the web report has always made it. The CLI had not, so a clipped file
+    // came out of a local scan looking exactly like a clean one. Worst first: the
+    // file that lost the most is the one worth naming.
+    const part = [...r.notFullyRead].sort((a, b) => b.of - b.shown - (a.of - a.shown));
+    for (const x of part.slice(0, 6)) {
+      console.log(`      ${C.grey(`${x.path} — shown to the auditor in part only, ${x.shown.toLocaleString()} of ${x.of.toLocaleString()} chars`)}`);
+    }
+    if (part.length > 6) console.log(`      ${C.grey(`…and ${part.length - 6} more file${part.length - 6 === 1 ? "" : "s"} shown in part`)}`);
     console.log(`      ${C.grey("These were not counted as clear.")}`);
     console.log("");
   }
