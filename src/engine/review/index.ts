@@ -1,6 +1,6 @@
 import type { Finding, SkillDoc } from "../types.ts";
 import { PROMPT_VERSION, SYSTEM, userMessage } from "./prompt.ts";
-import { MAX_REVIEW_CHARS, REVIEW_MODEL, ReviewUnavailable, askReviewer, reviewEnabled } from "./client.ts";
+import { MAX_REVIEW_CHARS, REVIEW_MODEL, ReviewUnavailable, askReviewer, reviewEnabled, type Usage } from "./client.ts";
 import { verifyReview } from "./verify.ts";
 
 export { reviewEnabled, REVIEW_MODEL, PROMPT_VERSION };
@@ -21,9 +21,12 @@ export interface ReviewReport {
   /** Skills the reviewer could not complete, by name and reason. Never silently skipped. */
   failures: { skill: string; reason: string }[];
   findings: Finding[];
+  /** Tokens this run actually spent, summed across calls. Cached skills cost none. */
+  usage: Usage;
 }
 
-const EMPTY: ReviewReport = { ran: false, model: REVIEW_MODEL, cached: 0, reviewed: 0, dropped: 0, failures: [], findings: [] };
+const NO_USAGE: Usage = { input: 0, output: 0, cacheWrite: 0, cacheRead: 0 };
+const EMPTY: ReviewReport = { ran: false, model: REVIEW_MODEL, cached: 0, reviewed: 0, dropped: 0, failures: [], findings: [], usage: { ...NO_USAGE } };
 
 /**
  * The cache key is the skill's content hash plus the model and prompt version.
@@ -48,7 +51,7 @@ const maxSkills = (): number => Number(process.env["SCAN_REVIEW_MAX_SKILLS"] ?? 
 export async function reviewSkills(skills: SkillDoc[], cache?: ReviewCache): Promise<ReviewReport> {
   if (!reviewEnabled() || !skills.length) return { ...EMPTY };
 
-  const out: ReviewReport = { ran: true, model: REVIEW_MODEL, cached: 0, reviewed: 0, dropped: 0, failures: [], findings: [] };
+  const out: ReviewReport = { ran: true, model: REVIEW_MODEL, cached: 0, reviewed: 0, dropped: 0, failures: [], findings: [], usage: { ...NO_USAGE } };
 
   // Anything already reviewed is free to serve, so the ceiling applies only to
   // skills that would cost a call. A re-scan of a large folder stays complete.
@@ -77,8 +80,12 @@ export async function reviewSkills(skills: SkillDoc[], cache?: ReviewCache): Pro
 
       try {
         const text = skill.lines.join("\n").slice(0, MAX_REVIEW_CHARS);
-        const raw = await askReviewer(SYSTEM, userMessage(skill.name, skill.skillPath, text));
-        const { findings, dropped } = verifyReview(skill, raw);
+        const call = await askReviewer(SYSTEM, userMessage(skill.name, skill.skillPath, text));
+        out.usage.input += call.usage.input;
+        out.usage.output += call.usage.output;
+        out.usage.cacheWrite += call.usage.cacheWrite;
+        out.usage.cacheRead += call.usage.cacheRead;
+        const { findings, dropped } = verifyReview(skill, call.json);
         out.reviewed++;
         out.dropped += dropped.length;
         out.findings.push(...findings);

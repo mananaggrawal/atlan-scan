@@ -32,6 +32,15 @@ rows.push([
     ? `on (${process.env["SCAN_REVIEW_MODEL"] ?? "claude-haiku-4-5"})`
     : "off — 50 deterministic checks only (set ANTHROPIC_API_KEY in .env)",
 ]);
+if (process.env["ANTHROPIC_API_KEY"]) {
+  rows.push(["  review ceiling", `${process.env["SCAN_REVIEW_MAX_SKILLS"] ?? 25} skills per run`]);
+  rows.push([
+    "  review budget",
+    process.env["SCAN_REVIEW_BUDGET_USD"]
+      ? `$${Number(process.env["SCAN_REVIEW_BUDGET_USD"]).toFixed(2)} per process`
+      : "none — set SCAN_REVIEW_BUDGET_USD to cap spend",
+  ]);
+}
 rows.push(["session secret", process.env["SESSION_SECRET"] ? "set" : "default — fine locally, change in production"]);
 
 console.log("");

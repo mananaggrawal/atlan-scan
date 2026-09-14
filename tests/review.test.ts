@@ -281,3 +281,21 @@ test("the skill defines a report a reader could actually produce standalone", as
   assert.match(SYSTEM, /this section overrides "The report" above/);
   assert.match(SYSTEM, /You do not write the markdown report/);
 });
+
+test("the budget stops the spending, and says so rather than going quiet", async () => {
+  const c = await import("../src/engine/review/client.ts");
+  const prevKey = process.env["ANTHROPIC_API_KEY"];
+  const prevBudget = process.env["SCAN_REVIEW_BUDGET_USD"];
+  process.env["ANTHROPIC_API_KEY"] = "sk-ant-not-a-real-key";
+  try {
+    assert.equal(c.budgetExhausted(), false, "with no budget set, nothing is capped");
+
+    // Cost is arithmetic over the usage the API reports, not a guess.
+    const usd = c.costOf({ input: 1_000_000, output: 0, cacheWrite: 0, cacheRead: 0 });
+    assert.equal(usd, 1.0, "a million input tokens should price at the input rate");
+  } finally {
+    if (prevKey) process.env["ANTHROPIC_API_KEY"] = prevKey; else delete process.env["ANTHROPIC_API_KEY"];
+    if (prevBudget) process.env["SCAN_REVIEW_BUDGET_USD"] = prevBudget; else delete process.env["SCAN_REVIEW_BUDGET_USD"];
+    c.resetSpend();
+  }
+});

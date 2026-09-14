@@ -166,10 +166,36 @@ Findings from the review sit in their own block, attributed to the model by name
 They are never merged into the 50 checks — that count is the part which is
 identical on every run, and it stays that way.
 
-Cost is bounded by a content-hash cache (same bytes, same model, same prompt, no
-second call) and a per-run ceiling (`SCAN_REVIEW_MAX_SKILLS`, default 25).
-Skills past the ceiling, and skills the reviewer could not complete, are named as
-unreviewed — never counted as clear.
+### What it costs, and how that is bounded
+
+`npm run cost -- <folder>` reviews a folder and prints the bill.
+
+Measured on the eight-skill fixture library, at claude-haiku-4-5 prices:
+about **$0.005 per skill** on first sight, and **$0.00** every time after — the
+cache is keyed on content hash, model and prompt version, and lives in the same
+database as the runs, so it survives a restart. On a public scanner that is the
+difference between paying for every visitor who scans a popular repo and paying
+for the first one.
+
+Four bounds, all environment variables:
+
+| | |
+|---|---|
+| `SCAN_REVIEW_BUDGET_USD` | hard ceiling per server process; reviews stop and say so, scans carry on |
+| `SCAN_REVIEW_MAX_SKILLS` | uncached skills one run may review, default 25 |
+| `SCAN_REVIEW_MAX_TOKENS` | output ceiling per skill, default 1000 |
+| `SCAN_REVIEW_MAX_CHARS` | how much of a large skill is sent, default 24000 |
+
+The ceiling applies only to skills that would cost a call, so a big folder
+converges: each scan reviews a few more and the rest come from cache, until it is
+free. Skills past the ceiling, and skills the reviewer could not complete, are
+named as unreviewed — never counted as clear.
+
+Prompt caching is requested on the system block but does not currently engage:
+Haiku 4.5 will not cache a prefix under 4,096 tokens and ours is about 2,300, and
+the API signals this by returning zero in both cache fields rather than by
+erroring. It is left in because it starts paying the moment the prompt grows past
+that line or the model is switched to a Sonnet, whose minimum is 1,024.
 
 With no key, the scan is the deterministic one and the report says the review did
 not run.

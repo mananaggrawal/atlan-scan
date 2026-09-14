@@ -169,5 +169,6 @@ export async function runScanWithReview(input: ScanInput, cache?: ReviewCache): 
     dropped: report.dropped,
     failures: report.failures,
     findings: report.findings,
+    usage: report.usage,
   });
 }

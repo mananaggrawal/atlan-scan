@@ -216,6 +216,8 @@ export interface ReviewSummary {
   duplicates?: number;
   failures: { skill: string; reason: string }[];
   findings: Finding[];
+  /** Tokens this run spent. Kept so cost is visible rather than inferred from a bill. */
+  usage?: { input: number; output: number; cacheWrite: number; cacheRead: number };
 }
 
 export type ENGINE_VERSION_T = string;

@@ -54,6 +54,17 @@ function memoryBackend(): Backend {
   };
 }
 
+/**
+ * The same database, handed to the review cache. A reviewed skill costs a model
+ * call once, ever — not once per process. On a public scanner that is the
+ * difference between paying for every visitor who scans a popular repo and
+ * paying for the first one.
+ */
+let reviewDb: import("node:sqlite").DatabaseSync | null = null;
+export function reviewDatabase(): import("node:sqlite").DatabaseSync | null {
+  return reviewDb;
+}
+
 function sqliteBackend(path: string): Backend | null {
   try {
     const nodeRequire = createRequire(import.meta.url);
@@ -67,6 +78,9 @@ function sqliteBackend(path: string): Backend | null {
         result TEXT NOT NULL
       );
       CREATE INDEX IF NOT EXISTS runs_owner ON runs(owner_id, created_at DESC);
+      CREATE TABLE IF NOT EXISTS review_cache (
+        key TEXT PRIMARY KEY, created_at INTEGER NOT NULL, findings TEXT NOT NULL
+      );
       CREATE TABLE IF NOT EXISTS interest (
         id INTEGER PRIMARY KEY AUTOINCREMENT, created_at INTEGER NOT NULL,
         feature TEXT, email TEXT NOT NULL, name TEXT
@@ -87,6 +101,7 @@ function sqliteBackend(path: string): Backend | null {
             isPublic: Number(r["is_public"]) === 1,
           }
         : undefined;
+    reviewDb = db;
     return {
       kind: `sqlite(${path})`,
       put(run) {
