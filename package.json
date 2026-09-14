@@ -1,19 +1,29 @@
 {
   "name": "atlan-scan",
   "version": "0.1.0",
-  
   "type": "module",
-  "description": "Atlan Scan — read what is actually in the skills you install.",
-  "engines": { "node": ">=22.6.0" },
-  "bin": { "atlan-scan": "./bin/atlan-scan.js" },
-  "files": ["bin", "src"],
+  "description": "Atlan Scan \u2014 read what is actually in the skills you install.",
+  "engines": {
+    "node": ">=22.6.0"
+  },
+  "bin": {
+    "atlan-scan": "./bin/atlan-scan.js"
+  },
+  "files": [
+    "bin",
+    "src"
+  ],
   "scripts": {
     "dev": "node --env-file-if-exists=.env --experimental-strip-types --watch src/web/server.ts",
     "start": "node --env-file-if-exists=.env --experimental-strip-types --no-warnings src/web/server.ts",
     "test": "SCAN_DB=memory node --experimental-strip-types --no-warnings --test tests/*.test.ts",
     "typecheck": "tsc --noEmit",
     "scan": "node --experimental-strip-types --no-warnings bin/cli.ts",
-    "doctor": "node --experimental-strip-types --no-warnings scripts/doctor.ts"
+    "doctor": "node --experimental-strip-types --no-warnings scripts/doctor.ts",
+    "prompt": "node --experimental-strip-types --no-warnings scripts/prompt.ts"
   },
-  "devDependencies": { "typescript": "^5.7.2", "@types/node": "^22.10.2" }
+  "devDependencies": {
+    "typescript": "^5.7.2",
+    "@types/node": "^22.10.2"
+  }
 }
