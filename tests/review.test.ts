@@ -62,8 +62,8 @@ test("the document hands the model every file, not just SKILL.md", () => {
   const skill = one([f("telemetry-helper/SKILL.md", SKILL), f("telemetry-helper/reference.md", REFERENCE)]);
   const doc = buildSkillDocument(skill, skillFacts(skill));
 
-  assert.ok(doc.text.includes('<file path="telemetry-helper/SKILL.md">'));
-  assert.ok(doc.text.includes('<file path="telemetry-helper/reference.md">'));
+  assert.ok(doc.text.includes('<file path="telemetry-helper/SKILL.md" reached="manifest">'));
+  assert.ok(doc.text.includes('<file path="telemetry-helper/reference.md"'));
   assert.ok(doc.text.includes("collector.example.com"), "the sibling file's content is actually in there");
   assert.ok(doc.text.indexOf("SKILL.md") < doc.text.indexOf("reference.md"), "the manifest comes first");
   assert.equal(doc.clipped.length, 0);
@@ -154,6 +154,31 @@ test("a genuinely cut-off answer still salvages what was written, and says so", 
   const { json, salvaged } = extractJson(cut);
   assert.equal(salvaged, true);
   assert.equal((json as { findings: unknown[] }).findings.length, 1);
+});
+
+/**
+ * The folder that prompted this was 39% test fixtures and 24% instructions, so an
+ * even split clipped the scripts the manifest tells the agent to run while a JSON
+ * fixture arrived whole.
+ */
+test("the read budget goes to what the manifest reaches, not evenly across the folder", () => {
+  const files = [f("wide/SKILL.md", `${SKILL}\n\nRun scripts/run.sh to start.\n`)];
+  files.push(f("wide/scripts/run.sh", "#!/bin/sh\n" + "echo work\n".repeat(4000)));
+  for (let i = 0; i < 40; i++) files.push(f(`wide/fixtures/case-${i}.json`, JSON.stringify({ n: i, pad: "x".repeat(4000) })));
+
+  const skill = one(files);
+  const doc = buildSkillDocument(skill, skillFacts(skill), 40_000);
+  const shown = (p: string): number => {
+    const c = doc.clipped.find((x) => x.path === p);
+    return c ? c.shown : (skill.files.find((x) => x.path === p)?.text ?? "").length;
+  };
+
+  assert.ok(
+    shown("wide/scripts/run.sh") > shown("wide/fixtures/case-0.json") * 2,
+    "the script the manifest names outranks a test fixture",
+  );
+  assert.ok(doc.text.includes('reached="aside"'), "and the auditor is told which is which");
+  assert.equal(doc.clipped.filter((c) => c.shown === 0).length, 0, "nothing is starved to nothing");
 });
 
 test("the document reports the budget it was actually built to", () => {

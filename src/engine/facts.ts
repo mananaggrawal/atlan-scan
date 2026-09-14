@@ -43,6 +43,8 @@ export interface SkillFacts {
   sha256: string;
   /** Markdown links to local files that are not in the upload. Measured by path, not judged. */
   danglingRefs: { ref: string; from: string }[];
+  /** How each file is reached when the skill is used. Measured; nothing is judged by it. */
+  reach: Map<string, Reach>;
 }
 
 export interface LibraryFacts {
@@ -110,6 +112,48 @@ function danglingRefs(skill: SkillDoc): { ref: string; from: string }[] {
   return out;
 }
 
+/**
+ * How a file is reached when somebody installs this skill and uses it.
+ *
+ * A measurement, like every other thing in this file — it says where a file sits
+ * and whether anything points at it, not whether it is dangerous. It exists
+ * because the read budget has to be spent somewhere, and spending it evenly over
+ * a folder that is 39% test fixtures means the manifest's own scripts arrive
+ * clipped while a JSON fixture arrives whole. Nothing is ever excluded on the
+ * strength of this: every file still reaches the auditor, carrying its label, and
+ * the auditor is free to find the payload in a fixture and say so.
+ */
+export type Reach = "manifest" | "named" | "conventional" | "aside";
+
+/** Places that execute or configure by convention, whether or not the manifest names them. */
+const EXEC_DIR = /(^|\/)(scripts?|bin|hooks?|tools?|\.tools|cmd)\//i;
+const CONFIG_FILE = /(^|\/)(requirements[^/]*\.txt|package(-lock)?\.json|pyproject\.toml|Pipfile(\.lock)?|poetry\.lock|go\.(mod|sum)|Gemfile(\.lock)?|Cargo\.(toml|lock)|setup\.(py|cfg)|Makefile|Dockerfile|docker-compose\.ya?ml|\.env[^/]*)$/i;
+/** Material that does not run when a user invokes the skill. Being named by the manifest overrides this. */
+const ASIDE_DIR = /(^|\/)(tests?|__tests__|testdata|fixtures?|examples?|samples?|snapshots?)\//i;
+
+export function reachOf(skill: SkillDoc): Map<string, Reach> {
+  // What the instructions talk about: the manifest and any markdown beside it.
+  // A bare mention counts, not only a markdown link — "run scripts/run.sh" in a
+  // numbered step is how a skill usually points at the thing that executes.
+  const prose = skill.files
+    .filter((f) => f.text && (f.path === skill.skillPath || f.path.endsWith(".md")))
+    .map((f) => f.text ?? "")
+    .join("\n");
+
+  const out = new Map<string, Reach>();
+  for (const f of skill.files) {
+    if (f.path === skill.skillPath) { out.set(f.path, "manifest"); continue; }
+    const rel = skill.dir && f.path.startsWith(`${skill.dir}/`) ? f.path.slice(skill.dir.length + 1) : f.path;
+    // The path, never the bare filename. A manifest that documents a data format
+    // called `agg_rows.json` is not pointing at the eight fixtures that happen to
+    // use that name, and matching on the basename marked all of them as reached.
+    if (prose.includes(rel)) { out.set(f.path, "named"); continue; }
+    if (EXEC_DIR.test(rel) || CONFIG_FILE.test(rel)) { out.set(f.path, "conventional"); continue; }
+    out.set(f.path, ASIDE_DIR.test(rel) ? "aside" : "conventional");
+  }
+  return out;
+}
+
 export function skillFacts(skill: SkillDoc): SkillFacts {
   const keysPresent = Object.keys(skill.frontmatter).filter((k) => (skill.frontmatter[k] ?? "").trim() !== "");
   return {
@@ -127,6 +171,7 @@ export function skillFacts(skill: SkillDoc): SkillFacts {
     bodyLines: skill.body.split(/\r?\n/).length,
     sha256: skill.sha256,
     danglingRefs: danglingRefs(skill),
+    reach: reachOf(skill),
   };
 }
 

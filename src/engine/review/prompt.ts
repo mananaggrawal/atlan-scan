@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { CATEGORIES, type SkillDoc } from "../types.ts";
-import type { LibraryFacts, SkillFacts } from "../facts.ts";
+import type { LibraryFacts, Reach, SkillFacts } from "../facts.ts";
 
 /**
  * The auditor's instructions live in skills/skill-audit/SKILL.md, not in this
@@ -76,8 +76,14 @@ you never call a skill safe. Two things change.
 return. Give findings as JSON.
 
 **You are shown the whole skill at once.** SKILL.md and every file beside it
-arrive together, each in its own <file> tag, along with a <facts> block of things
-already measured for you: the file inventory, any file that could not be decoded,
+arrive together, each in its own <file> tag. The \`reached\` attribute says how a
+file is arrived at when somebody uses the skill — \`manifest\` is SKILL.md itself,
+\`named\` means the instructions point at it by path, \`conventional\` means it sits
+where things execute or configure, \`aside\` means test or example material that
+does not run on a normal invocation. It is a measurement of position, not a
+verdict: \`aside\` files get a smaller share of the read for that reason, but a
+payload parked in one is still a payload and still yours to report. Alongside
+them is a <facts> block of things already measured for you: the file inventory, any file that could not be decoded,
 which frontmatter keys are present, and markdown links pointing at files that are
 not in the upload. Treat the facts as true and as yours to weigh — they are
 measurements, not findings. A missing \`version\` key is a fact; whether that is
@@ -148,8 +154,21 @@ export const MAX_SKILL_CHARS = Number(process.env["SCAN_REVIEW_MAX_CHARS"] ?? DE
  */
 const MIN_PER_FILE = 600;
 
-/** The manifest is the skill; the rest is beside it. A weight, not a reservation. */
-const MANIFEST_WEIGHT = 3;
+/**
+ * Shares of the budget by how a file is reached, from `reachOf` in facts.ts.
+ *
+ * Not a claim that a fixture is harmless — it still arrives, and the auditor is
+ * told what it is and can find the payload in it. It is a claim about where the
+ * characters do the most good: on the real skill this folder was 39% test
+ * fixtures and 24% instructions, so an even split clipped the scripts the
+ * manifest tells the agent to run while a JSON fixture arrived whole.
+ */
+const WEIGHTS: Record<Reach, number> = {
+  manifest: 4,
+  named: 3,
+  conventional: 3,
+  aside: 1,
+};
 
 /** Hard ceiling, so a folder of thousands of files cannot blow the context window. */
 const HARD_CAP = 400_000;
@@ -237,9 +256,10 @@ export function buildSkillDocument(skill: SkillDoc, facts: SkillFacts, budget = 
   // able to say what it did and did not see.
   const readable = ordered.filter((f) => f.readable && f.text !== null);
   const effective = Math.min(HARD_CAP, Math.max(budget, readable.length * MIN_PER_FILE));
+  const reach = (p: string): Reach => facts.reach.get(p) ?? "conventional";
   const share = allocate(
     readable.map((f) => f.text!.length),
-    readable.map((f) => (f.path === skill.skillPath ? MANIFEST_WEIGHT : 1)),
+    readable.map((f) => WEIGHTS[reach(f.path)]),
     effective,
   );
   const allowed = new Map(readable.map((f, i) => [f.path, share[i]!]));
@@ -260,7 +280,7 @@ export function buildSkillDocument(skill: SkillDoc, facts: SkillFacts, budget = 
       continue;
     }
     const attr = text.length < f.text.length ? ` clipped="${text.length} of ${f.text.length} chars"` : "";
-    parts.push(`<file path="${f.path}"${attr}>\n${text}\n</file>`);
+    parts.push(`<file path="${f.path}" reached="${reach(f.path)}"${attr}>\n${text}\n</file>`);
   }
 
   const factBlock = `<facts>
@@ -273,6 +293,9 @@ shown in full: ${facts.files.length - unreadable.length - clipped.length} of ${f
 shown only in part: ${
     clipped.length ? clipped.map((c) => `${c.path} (${c.shown} of ${c.of} chars)`).join("; ") : "(none)"
   }
+how each file is reached: ${(["manifest", "named", "conventional", "aside"] as Reach[])
+    .map((r) => `${r} ${[...facts.reach.values()].filter((v) => v === r).length}`)
+    .join(", ")}
 links to files not in this upload: ${
     facts.danglingRefs.length ? facts.danglingRefs.map((d) => `${d.from} → ${d.ref}`).join("; ") : "(none)"
   }
