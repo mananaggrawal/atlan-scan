@@ -252,3 +252,32 @@ test("when the engine already said it, the model is not made to say it twice", (
   assert.equal(r.review?.findings.length, 1);
   assert.equal(r.review?.findings[0]?.title, "The user is told not to be told");
 });
+
+test("the skill's category table and the engine's categories cannot drift apart", async () => {
+  const { readFileSync } = await import("node:fs");
+  const { SKILL_PATH } = await import("../src/engine/review/prompt.ts");
+  const { CATEGORIES } = await import("../src/engine/types.ts");
+
+  const raw = readFileSync(SKILL_PATH, "utf8");
+  const table = raw.slice(raw.indexOf("## The eight categories"));
+  const inSkill = [...table.matchAll(/^\| `([a-z-]+)` \|/gm)].map((m) => m[1]);
+
+  assert.deepEqual(inSkill, CATEGORIES.map((c) => c.id), "the skill lists different categories from the engine");
+});
+
+test("the skill defines a report a reader could actually produce standalone", async () => {
+  const { readFileSync } = await import("node:fs");
+  const { SKILL_PATH } = await import("../src/engine/review/prompt.ts");
+  const raw = readFileSync(SKILL_PATH, "utf8");
+
+  const report = raw.slice(raw.indexOf("## The report"));
+  for (const section of ["## Findings", "## Category results", "## Could not read", "## What this does not tell you"]) {
+    assert.ok(report.includes(section), `the report template is missing ${section}`);
+  }
+  assert.match(report, /No findings\./, "the template must say what a clean report looks like");
+
+  // And inside the scanner that template is explicitly superseded, so the model
+  // is never holding two different output instructions at once.
+  assert.match(SYSTEM, /this section overrides "The report" above/);
+  assert.match(SYSTEM, /You do not write the markdown report/);
+});
