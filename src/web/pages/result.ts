@@ -120,7 +120,7 @@ function sevRow(r: ScanResult): string {
 // just a bigger version of this scan. Kept short enough not to wrap.
 const REGISTRY_FEATURES: [string, string][] = [
   ["Scan", "Re-scans when an author ships a change"],
-  ["Control", "Sanctioned or shadow, held to one policy"],
+  ["Control", "Shadow agents found, then held to policy"],
   ["Defend", "Risky actions stopped while they run"],
   ["Marketplace", "A vetted shelf your team installs from"],
 ];

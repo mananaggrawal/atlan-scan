@@ -11,22 +11,45 @@ const PILLARS = [
       <div class="mrow"><span class="nm faint">render.bin</span><span class="sp pill medium">unreadable</span></div>` },
   { id: "control", tab: "Atlan Control", lead: "Governs the agent fleet",
     body: "every agent found, sanctioned or shadow, held to policy on config, identity and permissions.",
-    mock: `<svg class="graph" viewBox="0 0 620 210" role="img" aria-label="Agents discovered across the fleet and what they can reach">
-      <defs><marker id="ar" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
-        <path d="M0 0 L7 3.5 L0 7 z" fill="#C9CADF"/></marker></defs>
-      <path d="M132 105 C 190 105, 200 62, 258 62" fill="none" stroke="#C9CADF" stroke-width="1.4" marker-end="url(#ar)"/>
-      <path d="M132 105 C 190 105, 200 105, 258 105" fill="none" stroke="#C9CADF" stroke-width="1.4" marker-end="url(#ar)"/>
-      <path d="M132 105 C 190 105, 200 150, 258 150" fill="none" stroke="#C9CADF" stroke-width="1.4" marker-end="url(#ar)"/>
-      <path d="M392 62 C 440 62, 450 62, 496 62" fill="none" stroke="#E3B7C6" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#ar)"/>
-      <path d="M392 105 C 440 105, 450 105, 496 105" fill="none" stroke="#C9CADF" stroke-width="1.4" marker-end="url(#ar)"/>
-      <path d="M392 150 C 440 150, 450 150, 496 150" fill="none" stroke="#C9CADF" stroke-width="1.4" marker-end="url(#ar)"/>
-      <g class="n"><rect x="18" y="82" width="114" height="46" rx="9"/><text x="34" y="102">sarah@acme.io</text><text x="34" y="118" class="s">identity root</text></g>
-      <g class="n"><rect x="258" y="42" width="134" height="40" rx="9"/><text x="274" y="60">Claude Code</text><text x="274" y="74" class="s">high autonomy</text></g>
-      <g class="n"><rect x="258" y="86" width="134" height="38" rx="9"/><text x="274" y="103">Cursor</text><text x="274" y="116" class="s">sanctioned</text></g>
-      <g class="n sh"><rect x="258" y="130" width="134" height="40" rx="9"/><text x="274" y="148">unknown agent</text><text x="274" y="162" class="s">shadow · found</text></g>
-      <g class="n"><rect x="496" y="44" width="106" height="36" rx="9"/><text x="512" y="66">prod database</text></g>
-      <g class="n"><rect x="496" y="88" width="106" height="36" rx="9"/><text x="512" y="110">customer data</text></g>
-      <g class="n"><rect x="496" y="132" width="106" height="36" rx="9"/><text x="512" y="154">source repos</text></g>
+    mock: `<svg class="fleet" viewBox="0 0 640 236" role="img" aria-label="One person, the agents running under their identity, and what each one can reach">
+      <defs><marker id="a1" markerWidth="6" markerHeight="6" refX="5.4" refY="3" orient="auto">
+        <path d="M0 0 L6 3 L0 6 z" fill="#BFC0D8"/></marker>
+        <marker id="a2" markerWidth="6" markerHeight="6" refX="5.4" refY="3" orient="auto">
+        <path d="M0 0 L6 3 L0 6 z" fill="#D01B49"/></marker></defs>
+
+      <text class="ch" x="16" y="20">PERSON</text>
+      <text class="ch" x="212" y="20">AGENTS RUNNING AS THEM</text>
+      <text class="ch" x="486" y="20">CAN REACH</text>
+      <line class="rule" x1="0" y1="30" x2="640" y2="30"/>
+
+      <path d="M170 118 C 192 118, 192 66, 212 66" fill="none" class="w" marker-end="url(#a1)"/>
+      <path d="M170 118 C 192 118, 192 118, 212 118" fill="none" class="w" marker-end="url(#a1)"/>
+      <path d="M170 118 C 192 118, 192 170, 212 170" fill="none" class="w" marker-end="url(#a1)"/>
+      <path d="M446 66 C 466 66, 466 62, 486 62" fill="none" class="w bad" marker-end="url(#a2)"/>
+      <path d="M446 118 C 466 118, 466 114, 486 114" fill="none" class="w" marker-end="url(#a1)"/>
+      <path d="M446 170 C 466 170, 466 166, 486 166" fill="none" class="w" marker-end="url(#a1)"/>
+
+      <g><rect class="box" x="16" y="94" width="154" height="48"/>
+        <text class="nm" x="32" y="116">sarah@acme.io</text><text class="sub" x="32" y="132">identity root</text></g>
+
+      <g><rect class="box" x="212" y="44" width="234" height="44"/>
+        <text class="nm" x="228" y="64">Claude Code</text><text class="sub" x="228" y="79">auto mode · high autonomy</text>
+        <rect class="tag crit" x="368" y="56" width="62" height="19" rx="4"/>
+        <text class="tagt crit" x="399" y="69">2 critical</text></g>
+
+      <g><rect class="box" x="212" y="96" width="234" height="44"/>
+        <text class="nm" x="228" y="116">Cursor</text><text class="sub" x="228" y="131">sanctioned · policy applied</text>
+        <rect class="tag ok" x="380" y="108" width="50" height="19" rx="4"/>
+        <text class="tagt ok" x="405" y="121">on policy</text></g>
+
+      <g><rect class="box shadow" x="212" y="148" width="234" height="44"/>
+        <text class="nm" x="228" y="168">unnamed agent</text><text class="sub" x="228" y="183">shadow · found this morning</text>
+        <rect class="tag warn" x="374" y="160" width="56" height="19" rx="4"/>
+        <text class="tagt warn" x="402" y="173">unknown</text></g>
+
+      <g><rect class="leaf" x="486" y="44" width="138" height="36"/><text class="nm" x="500" y="66">prod database</text></g>
+      <g><rect class="leaf" x="486" y="96" width="138" height="36"/><text class="nm" x="500" y="118">customer records</text></g>
+      <g><rect class="leaf" x="486" y="148" width="138" height="36"/><text class="nm" x="500" y="170">source repos</text></g>
     </svg>` },
   { id: "defend", tab: "Atlan Defend", lead: "Secures every action the agent takes",
     body: "detect, respond and protect while the run is happening, not in the post-mortem.",
@@ -164,7 +187,7 @@ export function landingPage(user: User | null): string {
   <div class="finalcta">
     <span class="ctabrand"><span class="sq"></span>Atlan <em>Scan</em></span>
     <h2>You didn't read it.<br>Your agent will.</h2>
-    <p>Forty-five checks over one folder, and every finding quotes the line it came from.</p>
+    <p>One folder, about a minute, and you'll know exactly what's in there.</p>
     <div class="ctarow">
       <a class="btn btn-primary btn-lg" href="/scan">Scan a folder</a>
       <a class="btn btn-ghost btn-lg" href="/p/sample">See a real report first</a>

@@ -433,11 +433,24 @@ footer.bot{border-top:1px solid var(--line);margin-top:74px;padding:48px 0 34px;
 .platcta span{font-size:13.5px;color:var(--muted)}
 
 /* pillar panels: a different shape per capability, so four tabs read as four products */
-.mock .graph{width:100%;height:auto;display:block}
-.mock .graph .n rect{fill:var(--surface);stroke:var(--line);stroke-width:1}
-.mock .graph .n.sh rect{stroke:#E3B7C6;stroke-dasharray:4 3}
-.mock .graph text{font-family:var(--mono);font-size:11px;fill:var(--ink-strong)}
-.mock .graph text.s{font-size:9.5px;fill:var(--faint);letter-spacing:.06em}
+.mock .fleet{width:100%;height:auto;display:block}
+.mock .fleet .ch{font-family:var(--mono);font-size:8.5px;letter-spacing:.16em;fill:var(--faint)}
+.mock .fleet .rule{stroke:var(--line-soft);stroke-width:1}
+.mock .fleet .w{stroke:#BFC0D8;stroke-width:1.3}
+.mock .fleet .w.bad{stroke:var(--crit);stroke-dasharray:4 3}
+.mock .fleet .box{fill:var(--surface);stroke:var(--line);stroke-width:1;rx:9}
+.mock .fleet .box.shadow{stroke:#E9B9C7;stroke-dasharray:4 3}
+.mock .fleet .leaf{fill:var(--surface-2);stroke:var(--line-soft);stroke-width:1;rx:8}
+.mock .fleet .nm{font-family:var(--mono);font-size:11.5px;fill:var(--ink-strong)}
+.mock .fleet .sub{font-family:var(--body);font-size:10px;fill:var(--muted)}
+.mock .fleet .tag{rx:4}
+.mock .fleet .tag.crit{fill:var(--crit-bg);stroke:#F3C3D2}
+.mock .fleet .tag.ok{fill:#EAF5EF;stroke:#C4E2D2}
+.mock .fleet .tag.warn{fill:var(--med-bg);stroke:#E7DEB9}
+.mock .fleet .tagt{font-family:var(--mono);font-size:9px;text-anchor:middle;letter-spacing:.04em}
+.mock .fleet .tagt.crit{fill:var(--crit)}
+.mock .fleet .tagt.ok{fill:var(--clear)}
+.mock .fleet .tagt.warn{fill:var(--med)}
 
 .flow{display:flex;flex-direction:column;gap:1px}
 .flow .fr{display:flex;align-items:center;gap:14px;padding:13px 2px;border-top:1px solid var(--line-soft);font-size:13.5px}
