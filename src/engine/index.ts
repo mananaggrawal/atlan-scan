@@ -1,31 +1,11 @@
 import { randomBytes } from "node:crypto";
 import type {
-  CategoryResult, Finding, ScanResult, Severity, SkillSummary,
-  ReviewSummary,
+  CategoryResult, Finding, ScanResult, Severity, SkillSummary, ReviewSummary,
 } from "./types.ts";
 import { CATEGORIES, ENGINE_VERSION, SEVERITY_ORDER, worstOf } from "./types.ts";
-import { CHECK_CATALOG } from "./catalog.ts";
-import { contextFor, parseTree, type RawFile } from "./parse.ts";
-import { injectionChecks } from "./checks/injection.ts";
-import { externalChecks } from "./checks/external.ts";
-import { supplyChecks } from "./checks/supply.ts";
-import { privilegeChecks } from "./checks/privilege.ts";
-import { exfilChecks } from "./checks/exfil.ts";
-import { opacityChecks } from "./checks/opacity.ts";
-import { metadataChecks, provenanceChecks } from "./checks/metadata.ts";
-import { libraryFindings } from "./library.ts";
-import { reviewSkills, type ReviewCache } from "./review/index.ts";
-
-const PER_SKILL_CHECKS = [
-  ...injectionChecks,
-  ...externalChecks,
-  ...supplyChecks,
-  ...privilegeChecks,
-  ...exfilChecks,
-  ...opacityChecks,
-  ...metadataChecks,
-  ...provenanceChecks,
-];
+import { libraryFacts, skillFacts } from "./facts.ts";
+import { parseTree, type RawFile } from "./parse.ts";
+import { auditSkills, reviewEnabled, REVIEW_MODEL, type AuditReport, type ReviewCache } from "./review/index.ts";
 
 export function newRunId(): string {
   return randomBytes(9).toString("base64url");
@@ -36,73 +16,51 @@ export interface ScanInput {
   source: { kind: "upload" | "github" | "cli"; label: string };
 }
 
-export function runScan({ files, source }: ScanInput, review?: ReviewSummary): ScanResult {
-  // eslint-disable-next-line prefer-const -- reassigned when duplicates are removed below
+const NO_AUDIT: AuditReport = {
+  ran: false, model: REVIEW_MODEL, cached: 0, reviewed: 0, dropped: 0,
+  failures: [], clipped: [], partial: [], findings: [], usage: { input: 0, output: 0, cacheWrite: 0, cacheRead: 0 },
+};
+
+/**
+ * Assemble the report.
+ *
+ * This function decides nothing. It parses the upload, measures what can be
+ * measured, hands every file to the auditor, and arranges what comes back into
+ * the fixed shape the report renders. Every finding in the result was written by
+ * a model reading the skill; every number beside it was counted from the files.
+ * If you find yourself adding a rule here about what is or is not a problem, it
+ * belongs in skills/skill-audit/SKILL.md instead — that is the whole point.
+ */
+export function assemble({ files, source }: ScanInput, audit: AuditReport): ScanResult {
   const tree = parseTree(files);
-  const findings: Finding[] = [];
-
-  for (const skill of tree.skills) {
-    const ctx = contextFor(skill);
-    for (const check of PER_SKILL_CHECKS) {
-      try {
-        findings.push(...check(ctx));
-      } catch (err) {
-        // A broken check must never take the scan down, and must never look like a pass.
-        findings.push({
-          checkId: "engine-check-error",
-          categoryId: "opacity",
-          severity: "info",
-          skill: skill.name,
-          file: skill.skillPath,
-          line: null,
-          title: "A check could not complete on this skill",
-          evidence: `${(err as Error).message ?? String(err)}`,
-          why: "This part of the skill was not examined. It is reported rather than dropped, because a silent skip is indistinguishable from a clean result.",
-          fix: "Re-run the scan. If it recurs, send us the skill name.",
-          ast: [],
-        });
-      }
-    }
-  }
-
-  const lib = libraryFindings(tree.skills);
-  findings.push(...lib.findings);
+  const findings = [...audit.findings];
 
   findings.sort((a, b) => {
     const s = SEVERITY_ORDER.indexOf(a.severity) - SEVERITY_ORDER.indexOf(b.severity);
     if (s !== 0) return s;
-    return a.skill.localeCompare(b.skill) || a.checkId.localeCompare(b.checkId);
+    return a.skill.localeCompare(b.skill) || a.title.localeCompare(b.title);
   });
 
   const skills: SkillSummary[] = tree.skills.map((s) => {
+    const facts = skillFacts(s);
     const mine = findings.filter((f) => f.skill === s.name);
-    const desc = s.frontmatter["description"] ?? "";
-    const when = s.frontmatter["when_to_use"] ?? s.frontmatter["when-to-use"] ?? "";
     return {
       name: s.name,
       path: s.skillPath,
       files: s.files.length,
-      descriptionChars: desc.length + when.length,
-      bodyLines: s.body.split(/\r?\n/).length,
+      descriptionChars: facts.descriptionChars,
+      bodyLines: facts.bodyLines,
       findings: mine.length,
       worst: worstOf(mine.map((f) => f.severity)),
       sha256: s.sha256,
     };
   });
 
+  // Every category is reported on every run, cleared or not. A category that was
+  // skipped and a category that came back clean must never look the same, and the
+  // fixed skeleton is what makes two reports comparable.
   const categories: CategoryResult[] = CATEGORIES.map((c) => {
     const mine = findings.filter((f) => f.categoryId === c.id);
-    // Every check in the catalog is reported, cleared or not — the skeleton never changes.
-    const checks = CHECK_CATALOG.filter((m) => m.categoryId === c.id).map((m) => {
-      const hits = findings.filter((f) => f.checkId === m.id);
-      return {
-        id: m.id,
-        name: m.name,
-        blurb: m.blurb,
-        count: hits.length,
-        worst: worstOf(hits.map((f) => f.severity)),
-      };
-    });
     return {
       id: c.id,
       name: c.name,
@@ -110,25 +68,25 @@ export function runScan({ files, source }: ScanInput, review?: ReviewSummary): S
       blurb: c.blurb,
       count: mine.length,
       worst: worstOf(mine.map((f) => f.severity)),
-      checks,
+      findings: mine,
     };
   });
-
-  // The reviewer audits provenance too, because the skill it runs from has to be a
-  // complete audit on its own — someone running it in Claude Code has no engine
-  // beside them. Inside the scanner the engine has usually said it first, so the
-  // duplicate is dropped here rather than by narrowing what the reviewer looks at.
-  if (review?.findings.length) {
-    const engineSaidIt = new Set(findings.map((f) => `${f.skill}|${f.categoryId}|${f.line ?? "-"}`));
-    const kept = review.findings.filter((f) => !engineSaidIt.has(`${f.skill}|${f.categoryId}|${f.line ?? "-"}`));
-    review = { ...review, duplicates: review.findings.length - kept.length, findings: kept };
-  }
 
   const bySeverity = { critical: 0, high: 0, medium: 0, low: 0, info: 0 } as Record<Severity, number>;
   for (const f of findings) bySeverity[f.severity]++;
 
+  const summary: ReviewSummary = {
+    ran: audit.ran,
+    model: audit.model,
+    reviewed: audit.reviewed,
+    cached: audit.cached,
+    dropped: audit.dropped,
+    failures: audit.failures,
+    findings: audit.findings,
+    usage: audit.usage,
+  };
+
   return {
-    ...(review ? { review } : {}),
     runId: newRunId(),
     scannedAt: new Date().toISOString(),
     engineVersion: ENGINE_VERSION,
@@ -137,6 +95,8 @@ export function runScan({ files, source }: ScanInput, review?: ReviewSummary): S
     skills,
     findings,
     unreadable: tree.unreadable,
+    notFullyRead: audit.clipped,
+    partial: audit.partial,
     categories,
     totals: {
       skills: tree.skills.length,
@@ -145,30 +105,26 @@ export function runScan({ files, source }: ScanInput, review?: ReviewSummary): S
       nonText: tree.nonTextCount,
       bySeverity,
     },
-    library: lib.stats,
+    library: libraryFacts(tree.skills),
+    audit: summary,
   };
 }
 
-export { CATEGORIES, ENGINE_VERSION, SEVERITY_ORDER, worstOf };
-export { CHECK_CATALOG } from "./catalog.ts";
-
 /**
- * The engine, then the reviewer. The engine result is complete and returned in
- * full whether or not the reviewer ran; the review is attached beside it. A
- * reviewer that is off, rate-limited or slow costs you the semantic block and
- * nothing else.
+ * Scan a folder: parse it, audit it, render it.
+ *
+ * With no ANTHROPIC_API_KEY there is no audit — the model is the audit — so the
+ * result comes back with `audit.ran: false` and no findings. That is not a clean
+ * report and must never be shown as one; every surface that renders a result
+ * checks `audit.ran` and says so.
  */
-export async function runScanWithReview(input: ScanInput, cache?: ReviewCache): Promise<ScanResult> {
+export async function runScan(input: ScanInput, cache?: ReviewCache): Promise<ScanResult> {
   const tree = parseTree(input.files);
-  const report = await reviewSkills(tree.skills, cache);
-  return runScan(input, {
-    ran: report.ran,
-    model: report.model,
-    reviewed: report.reviewed,
-    cached: report.cached,
-    dropped: report.dropped,
-    failures: report.failures,
-    findings: report.findings,
-    usage: report.usage,
-  });
+  const audit = reviewEnabled() ? await auditSkills(tree.skills, cache) : NO_AUDIT;
+  return assemble(input, audit);
 }
+
+export { CATEGORIES, ENGINE_VERSION, SEVERITY_ORDER, worstOf };
+export { reviewEnabled, REVIEW_MODEL } from "./review/index.ts";
+export type { AuditReport, ReviewCache } from "./review/index.ts";
+export type { Finding };

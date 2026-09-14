@@ -19,41 +19,6 @@ function findingBlock(f: Finding): string {
   </div>`;
 }
 
-/**
- * The semantic review, reported as its own block.
- *
- * It is deliberately not folded into the category cards. The 50 checks are the
- * part that is identical on every run; this is a model's reading, and the report
- * says so, names the model, and says how many of its claims were discarded for
- * quoting text that was not in the file.
- */
-function reviewPanel(r: ScanResult, full: boolean): string {
-  const rev = r.review;
-  if (!rev?.ran) return "";
-
-  const head = `<div class="cathead">
-      <h3>Read by a model</h3>
-      <span class="astbadge">${esc(rev.model)}</span>
-      ${rev.findings.length === 0
-        ? `<span class="status clear">✓ nothing further</span>`
-        : `<span class="status flag ${rev.findings[0]?.severity ?? "low"}">${plural(rev.findings.length, "finding")}</span>`}
-    </div>`;
-
-  const note = `<p class="revnote">A model was shown each skill as data and asked what it would make an agent do — the part a pattern cannot reach. Every quote below was checked back against the file${rev.dropped > 0 ? `, and ${plural(rev.dropped, "claim")} that did not match the text ${rev.dropped === 1 ? "was" : "were"} dropped` : ""}.</p>`;
-
-  const fails = rev.failures.length
-    ? `<p class="revfail">${plural(rev.failures.length, "skill")} could not be reviewed: ${esc(rev.failures.map((f) => `${f.skill} (${f.reason})`).join("; "))}. ${rev.failures.length === 1 ? "It was" : "They were"} not counted as clear.</p>`
-    : "";
-
-  const body = rev.findings.length === 0
-    ? `<p class="revempty">Nothing beyond what the checks already found.</p>`
-    : full
-      ? rev.findings.map(findingBlock).join("")
-      : lockRow(r.runId, "Sign in to see what it found");
-
-  return `<div class="catcard review">${head}<div class="catbody">${note}${fails}${body}</div></div>`;
-}
-
 function lockRow(runId: string, label: string): string {
   return `<div class="lockrow">
     <div class="bars"><div><i></i><i></i><i></i></div><div><i></i><i></i><i></i></div><div><i></i><i></i><i></i></div></div>
@@ -63,27 +28,8 @@ function lockRow(runId: string, label: string): string {
 
 function categoryCard(c: CategoryResult, r: ScanResult, full: boolean): string {
   const status = c.count === 0
-    ? `<span class="status clear">✓ cleared</span>`
+    ? `<span class="status clear">✓ nothing reported</span>`
     : `<span class="status flag ${c.worst}">${plural(c.count, "finding")}</span>`;
-
-  const subs = c.checks
-    .map((chk) => {
-      const hits = r.findings.filter((f) => f.checkId === chk.id);
-      const count = chk.count === 0
-        ? `<span class="sc">clear</span>`
-        : `<span class="sc hit">${chk.count}</span>`;
-      const detail = chk.count === 0
-        ? ""
-        : full
-          ? hits.map(findingBlock).join("")
-          : lockRow(r.runId, "Sign in to see the line");
-      return `<div class="sub">
-        <div class="sh"><span class="st">${esc(chk.name)}</span>${count}</div>
-        <div class="sd">${esc(chk.blurb)}</div>
-        ${detail}
-      </div>`;
-    })
-    .join("");
 
   const head = `<div class="cathead">
       <h3>${esc(c.name)}</h3>
@@ -91,13 +37,87 @@ function categoryCard(c: CategoryResult, r: ScanResult, full: boolean): string {
       ${status}
     </div>`;
 
-  // A cleared category collapses to one line, so a clean library looks clean at a glance —
-  // but the checks stay one click away, because the skeleton is the promise.
+  // A category with nothing in it collapses to one line, so a clean library looks
+  // clean at a glance — but every category is still on the page, because a category
+  // that was skipped and a category that came back clean must never look the same.
   if (c.count === 0) {
     return `<details class="catcard cleared"><summary>${head}</summary>
-      <div class="catbody">${subs}</div></details>`;
+      <div class="catbody"><div class="sub"><div class="sd">${esc(c.blurb)}</div></div></div></details>`;
   }
-  return `<div class="catcard">${head}<div class="catbody">${subs}</div></div>`;
+
+  const body = full
+    ? c.findings.map(findingBlock).join("")
+    : lockRow(r.runId, `Sign in to read ${c.count === 1 ? "it" : "them"}`);
+
+  return `<div class="catcard">${head}<div class="catbody">
+    <div class="sub"><div class="sd">${esc(c.blurb)}</div></div>
+    ${body}
+  </div></div>`;
+}
+
+/**
+ * What the auditor was, and what it did not manage to read.
+ *
+ * Always rendered. A report that quietly omits this is claiming a completeness it
+ * does not have — an unaudited skill, a clipped file and a clean skill look
+ * identical unless the page says otherwise.
+ */
+function auditNote(r: ScanResult, full: boolean): string {
+  const a = r.audit;
+
+  if (!a.ran) {
+    return `<div class="catcard"><div class="cathead"><h3>These skills were not audited</h3>
+      <span class="status flag high">no audit</span></div>
+      <div class="catbody"><p class="revnote">The audit is a model reading every file, and no model was available for this run.
+      Nothing below is a result. Set <code>ANTHROPIC_API_KEY</code> on the server, or run the
+      <code>skill-audit</code> skill yourself in Claude Code against this folder.</p></div></div>`;
+  }
+
+  const bits: string[] = [];
+  bits.push(`${plural(a.reviewed + a.cached, "skill")} audited by ${esc(a.model)}`);
+  if (a.dropped > 0) {
+    bits.push(`${plural(a.dropped, "claim")} discarded for quoting text that is not in the files`);
+  }
+
+  const problems: string[] = [];
+  // The count is shown to everyone; which file it was is detail, and detail is
+  // behind the sign-in like every other detail on this page.
+  const named = (parts: string[]): string => (full ? `: ${esc(parts.join("; "))}` : "");
+
+  if (a.failures.length) {
+    problems.push(`<p class="revfail">${plural(a.failures.length, "skill")} could not be audited${named(
+      a.failures.map((f) => `${f.skill} (${f.reason})`),
+    )}. ${a.failures.length === 1 ? "It was" : "They were"} not counted as clear.</p>`);
+  }
+  if (r.partial.length) {
+    problems.push(`<p class="revfail">${plural(r.partial.length, "audit")} stopped early, at the model's output limit${named(
+      r.partial.map((x) => `${x.skill} (${plural(x.kept, "finding")} written before it stopped)`),
+    )}. What it had written is below; what it had not is missing, so ${
+      r.partial.length === 1 ? "that skill is" : "those skills are"
+    } not fully audited.</p>`);
+  }
+  if (r.notFullyRead.length) {
+    problems.push(`<p class="revfail">${plural(r.notFullyRead.length, "file")} shown only in part${named(
+      r.notFullyRead.map((c) => `${c.path} (${c.shown.toLocaleString()} of ${c.of.toLocaleString()} chars)`),
+    )}. What was not shown was not audited.</p>`);
+  }
+  if (r.unreadable.length) {
+    problems.push(`<p class="revfail">${plural(r.unreadable.length, "file")} could not be read at all${named(
+      r.unreadable.map((u) => `${u.path} (${u.reason})`),
+    )}. An unreadable file is never a clear one.</p>`);
+  }
+
+  return `<div class="catcard"><div class="cathead"><h3>How this was audited</h3>
+    ${problems.length ? `<span class="status flag low">${plural(problems.length, "caveat")}</span>` : `<span class="status clear">✓ read in full</span>`}</div>
+    <div class="catbody">
+      <p class="revnote">${esc(bits.join(" \u00b7 "))}. Every skill was handed to the model as data — SKILL.md and
+      every file beside it — with the <code>skill-audit</code> skill as its instructions. Each quote below was
+      then checked back against the file it names, and anything that did not match was dropped before you saw it.</p>
+      ${problems.join("")}
+      <p class="revnote">This does not tell you the skills are safe. It tells you what a careful reader
+      found in the text that ships. A payload can be encoded, fetched at run time, or parked in a file
+      nobody opens.</p>
+    </div></div>`;
 }
 
 function rail(r: ScanResult, full: boolean, isPublic = false): string {
@@ -109,7 +129,8 @@ function rail(r: ScanResult, full: boolean, isPublic = false): string {
        <div class="kv"><span>Images &amp; other assets</span><b>${r.totals.nonText}</b></div>
        <div class="kv"><span>Permission findings</span><b>${grants}</b></div>
        <div class="kv"><span>Listing metadata</span><b>${r.library.listingChars.toLocaleString()}c</b></div>
-       <div class="kv"><span>Colliding triggers</span><b>${r.library.overlapPairs.length}</b></div>`
+       <div class="kv"><span>Audited by</span><b>${esc(r.audit.model)}</b></div>
+       <div class="kv"><span>Claims discarded</span><b>${r.audit.dropped}</b></div>`
     : lockRow(r.runId, "Sign in with Google");
 
   return `<aside class="rail">
@@ -124,17 +145,20 @@ function rail(r: ScanResult, full: boolean, isPublic = false): string {
 }
 
 function lede(r: ScanResult): string {
-  const totalChecks = r.categories.reduce((n, c) => n + c.checks.length, 0);
-  const flagged = r.categories.reduce((n, c) => n + c.checks.filter((k) => k.count > 0).length, 0);
-  const clearCats = r.categories.filter((c) => c.count === 0).length;
+  const cats = r.categories.length;
+  const flagged = r.categories.filter((c) => c.count > 0).length;
   const unread = r.unreadable.length
     ? ` ${plural(r.unreadable.length, "file")} could not be read.`
     : " Every file was readable.";
-  if (flagged === 0) {
-    return `Nothing flagged across <b>${plural(r.totals.skills, "skill")}</b>. All ${totalChecks} checks came back clear.${unread}`;
+
+  if (!r.audit.ran) {
+    return `<b>Not audited.</b> The audit is a model reading every file, and none was available for this run.${unread}`;
   }
-  return `<b>${flagged} of ${totalChecks} checks</b> flagged across <b>${plural(r.totals.skills, "skill")}</b>${
-    clearCats ? `, and ${clearCats} of ${r.categories.length} categories came back clear` : ""
+  if (r.totals.findings === 0) {
+    return `Nothing reported across <b>${plural(r.totals.skills, "skill")}</b>. All ${cats} categories were audited and came back empty.${unread}`;
+  }
+  return `<b>${plural(r.totals.findings, "finding")}</b> across <b>${plural(r.totals.skills, "skill")}</b>, in ${flagged} of ${cats} categories${
+    flagged < cats ? `, with ${cats - flagged} reporting nothing` : ""
   }.${unread}`;
 }
 
@@ -207,8 +231,8 @@ export function resultPage(r: ScanResult, user: User | null, opts: ResultOpts = 
   ${opts.isPublic ? publicBanner(Boolean(opts.isSample)) : ""}
   <div class="cols" style="margin-top:26px">
     <div>
+      ${auditNote(r, full)}
       ${r.categories.map((c) => categoryCard(c, r, full)).join("")}
-      ${reviewPanel(r, full)}
       ${opts.isOwner ? sharePanel(r.runId, opts.baseUrl ?? "") : ""}
       ${opts.isPublic ? "" : registryCta()}
     </div>

@@ -77,6 +77,12 @@ returns nothing they can act on.
 
 If you cannot quote it, you do not have it. Say so instead.
 
+**Reporting something that is missing.** An absence has no line of its own, and a
+quote you assembled to stand for one is an invented quote. Quote the place the
+missing thing should have been: for a frontmatter field, the frontmatter block
+itself; for a step that should exist, the step before it. Do not write
+`(no version field)` or `version: missing` — neither of those is in the file.
+
 ## Severity
 
 | | |

@@ -9,7 +9,7 @@
  */
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
-import { runScan } from "../src/engine/index.ts";
+import { reviewEnabled, runScan } from "../src/engine/index.ts";
 import type { RawFile } from "../src/engine/parse.ts";
 import type { ScanResult, Severity } from "../src/engine/types.ts";
 
@@ -50,12 +50,16 @@ function walk(root: string, dir: string, out: RawFile[]): void {
 }
 
 function print(r: ScanResult): void {
-  const flagged = r.categories.reduce((n, c) => n + c.checks.filter((k) => k.count > 0).length, 0);
-  const total = r.categories.reduce((n, c) => n + c.checks.length, 0);
+  const flagged = r.categories.filter((c) => c.count > 0).length;
   console.log("");
   console.log(C.b(`  ${r.source.label}`));
-  console.log(`  ${flagged} of ${total} checks flagged across ${r.totals.skills} skill${r.totals.skills === 1 ? "" : "s"}` +
-    (r.unreadable.length ? `, ${r.unreadable.length} file${r.unreadable.length === 1 ? "" : "s"} could not be read` : ""));
+  console.log(
+    `  ${r.totals.findings} finding${r.totals.findings === 1 ? "" : "s"} across ${r.totals.skills} skill${
+      r.totals.skills === 1 ? "" : "s"
+    }, in ${flagged} of ${r.categories.length} categories` +
+      (r.unreadable.length ? `, ${r.unreadable.length} file${r.unreadable.length === 1 ? "" : "s"} could not be read` : ""),
+  );
+  console.log(C.grey(`  read by ${r.audit.model}${r.audit.dropped ? ` · ${r.audit.dropped} unverifiable claim${r.audit.dropped === 1 ? "" : "s"} discarded` : ""}`));
   console.log("");
 
   for (const c of r.categories) {
@@ -72,6 +76,15 @@ function print(r: ScanResult): void {
       console.log(`      ${C.blue("fix")} ${f.fix}`);
       console.log("");
     }
+  }
+  if (r.audit.failures.length || r.partial.length) {
+    console.log(`  ${C.yellow("!")} ${C.b("Not fully audited")}`);
+    for (const x of r.audit.failures) console.log(`      ${C.grey(`${x.skill} — ${x.reason}`)}`);
+    for (const x of r.partial) {
+      console.log(`      ${C.grey(`${x.skill} — the auditor stopped at its output limit after ${x.kept} finding${x.kept === 1 ? "" : "s"}`)}`);
+    }
+    console.log(`      ${C.grey("These were not counted as clear.")}`);
+    console.log("");
   }
   if (r.unreadable.length) {
     console.log(`  ${C.yellow("?")} ${C.b("Could not read")} ${C.grey(`${r.unreadable.length} file${r.unreadable.length === 1 ? "" : "s"}`)}`);
@@ -106,7 +119,22 @@ async function main(): Promise<void> {
     process.exit(2);
   }
 
-  const result = runScan({ files, source: { kind: "cli", label: target.split("/").pop() || target } });
+  if (!reviewEnabled()) {
+    console.error(`
+  No ANTHROPIC_API_KEY set, so there is nothing to audit with.
+
+  The audit is a model reading every file of every skill, using the skill-audit
+  skill as its instructions. There is no pattern fallback behind it — printing an
+  empty report here would read as a clean one, which is the one thing this tool
+  will not do.
+
+  Either set ANTHROPIC_API_KEY, or open this folder in Claude Code and run the
+  skill-audit skill directly. It produces the same report without this CLI.
+`);
+    process.exit(2);
+  }
+
+  const result = await runScan({ files, source: { kind: "cli", label: target.split("/").pop() || target } });
 
   if (args.includes("--json")) console.log(JSON.stringify(result, null, 2));
   else if (!args.includes("--quiet")) print(result);

@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import type { FileEntry, SkillDoc, Unreadable, CheckContext } from "./types.ts";
+import type { FileEntry, SkillDoc, Unreadable } from "./types.ts";
 
 export interface RawFile {
   path: string;
@@ -160,39 +160,6 @@ export function parseTree(files: RawFile[]): ParsedTree {
 
   const orphanFiles = entries.filter((e) => !claimed.has(e.path));
   return { skills, unreadable, nonTextCount, fileCount: entries.length, orphanFiles };
-}
-
-const SHELL_VERBS =
-  /^(npm|npx|pnpm|yarn|bun|pip|pip3|uv|uvx|pipx|brew|apt|apt-get|curl|wget|git|bash|sh|zsh|python|python3|node|deno|chmod|chown|sudo|eval|export|docker|make|gh|ssh|scp|rsync|cat|tar|zip|unzip|base64|openssl)\b/;
-
-/**
- * Command-like lines only. Learned the hard way in pulse-standalone: install checks
- * fired on a reference file that merely *discussed* installs. Gate to fenced code,
- * indented code, or a line that starts with a shell verb.
- */
-export function commandLines(text: string): { line: number; text: string }[] {
-  const out: { line: number; text: string }[] = [];
-  const lines = text.split(/\r?\n/);
-  let fenced = false;
-  for (let i = 0; i < lines.length; i++) {
-    const raw = lines[i] ?? "";
-    if (/^\s*(```|~~~)/.test(raw)) {
-      fenced = !fenced;
-      continue;
-    }
-    const trimmed = raw.trim();
-    if (!trimmed) continue;
-    const indented = /^(\t| {4,})\S/.test(raw);
-    const startsWithVerb = SHELL_VERBS.test(trimmed) || /^\$\s+\S/.test(trimmed);
-    if (fenced || indented || startsWithVerb) {
-      out.push({ line: i + 1, text: trimmed.replace(/^\$\s+/, "") });
-    }
-  }
-  return out;
-}
-
-export function contextFor(skill: SkillDoc): CheckContext {
-  return { skill, commandLines: commandLines(skill.lines.join("\n")) };
 }
 
 /** Find the 1-based line number of the first line matching a predicate. */

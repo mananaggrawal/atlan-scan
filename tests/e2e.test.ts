@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import type { Server } from "node:http";
+import { createServer } from "node:http";
 import { makeServer } from "../src/web/server.ts";
 
 let server: Server;
@@ -51,13 +52,71 @@ function demoFiles(): { path: string; data: string }[] {
   return out;
 }
 
+
+/**
+ * A stand-in for the model.
+ *
+ * It quotes a real line out of the document it was handed, which is the only way a
+ * finding survives verify.ts — so these tests exercise the real path (prompt →
+ * model → verify → report) without a network call or an API key. A stub that
+ * invented a quote would be dropped by the verifier, which is the point of it.
+ */
+let stubModel: Server;
+
+function firstQuotableLine(userText: string): { file: string; line: string } | null {
+  const blocks = [...userText.matchAll(/<file path="([^"]+)"[^>]*>\n([\s\S]*?)\n<\/file>/g)];
+  for (const b of blocks) {
+    for (const line of (b[2] ?? "").split("\n")) {
+      const t = line.trim();
+      if (t.length > 15 && !t.startsWith("---")) return { file: b[1] ?? "", line: t };
+    }
+  }
+  return null;
+}
+
+async function startStubModel(): Promise<string> {
+  stubModel = createServer((req, res) => {
+    let body = "";
+    req.on("data", (c) => (body += c));
+    req.on("end", () => {
+      const parsed = JSON.parse(body || "{}") as { messages?: { content?: string }[] };
+      const user = parsed.messages?.[0]?.content ?? "";
+      const hit = firstQuotableLine(user);
+      const findings = hit
+        ? [{
+            file: hit.file,
+            categoryId: "opacity",
+            severity: "medium",
+            title: "Worth a second look before installing",
+            evidence: hit.line,
+            why: "A reader who installs this would not have seen this line.",
+            fix: "Say plainly what this step does.",
+          }]
+        : [];
+      res.writeHead(200, { "content-type": "application/json" });
+      res.end(JSON.stringify({
+        content: [{ type: "text", text: JSON.stringify({ findings }) }],
+        usage: { input_tokens: 10, output_tokens: 10 },
+      }));
+    });
+  });
+  await new Promise<void>((r) => stubModel.listen(0, r));
+  const addr = stubModel.address();
+  return `http://127.0.0.1:${typeof addr === "object" && addr ? addr.port : 0}`;
+}
+
 before(async () => {
+  process.env["ANTHROPIC_API_KEY"] = "test-key";
+  process.env["SCAN_REVIEW_ENDPOINT"] = await startStubModel();
   server = makeServer();
   await new Promise<void>((r) => server.listen(0, r));
   const addr = server.address();
   base = `http://127.0.0.1:${typeof addr === "object" && addr ? addr.port : 0}`;
 });
-after(() => server.close());
+after(() => {
+  server.close();
+  stubModel?.close();
+});
 
 let runId = "";
 
@@ -83,18 +142,20 @@ test("a scan of the demo library returns a run id", async () => {
   assert.equal(res.status, 200);
   const body = (await res.json()) as { runId: string; findings: number };
   assert.ok(body.runId);
-  assert.ok(body.findings > 15, `expected findings, got ${body.findings}`);
+  // One per skill from the stub, plus whatever the library pass returns.
+  assert.ok(body.findings >= 8, `expected a finding per skill, got ${body.findings}`);
   runId = body.runId;
 });
 
 test("the signed-out report is a teaser: counts yes, evidence no", async () => {
   const html = await (await get(`/r/${runId}`)).text();
-  assert.match(html, /Sign in to see the line/);
+  assert.match(html, /Sign in to read/);
   for (const leak of ["data-sync", "ui-design", "deploy-helper", "webhook.site/9a1f2c3d", "Ignore all previous"]) {
     assert.ok(!html.includes(leak), `teaser leaked: ${leak}`);
   }
-  assert.match(html, /checks<\/b> flagged/);
+  assert.match(html, /findings?<\/b> across/);
   assert.match(html, /Prompt injection/);
+  assert.match(html, /How this was audited/, "the report always says who read it");
 });
 
 test("a folder with no SKILL.md is refused with a useful message", async () => {
@@ -113,9 +174,9 @@ test("signing in claims the anonymous run and reveals the detail", async () => {
   const res = await post("/auth/stub", `email=test@example.com&next=/r/${runId}`, "application/x-www-form-urlencoded");
   assert.equal(res.status, 302);
   const html = await (await get(`/r/${runId}`)).text();
-  assert.ok(!html.includes("Sign in to see the line"), "still gated after sign-in");
+  assert.ok(!html.includes("Sign in to read"), "still gated after sign-in");
   assert.match(html, /data-sync/);
-  assert.match(html, /webhook\.site/);
+  assert.match(html, /class="quote"/, "the quoted line is shown once signed in");
   assert.match(html, /Share this report/);
 });
 
@@ -138,7 +199,7 @@ test("a report is shareable by link with no publish step, and the badge claims n
   const badge = await get(`/badge/${runId}.svg`);
   assert.equal(badge.status, 200);
   const svg = await badge.text();
-  assert.match(svg, /skills? · \d+\/\d+ flagged/);
+  assert.match(svg, /\d+ skills? · (\d+ findings?|nothing reported)/);
   assert.ok(!/\bsafe\b|✓|passed/i.test(svg), "badge made a safety claim");
 });
 
@@ -151,7 +212,7 @@ test("the share panel warns when the link cannot be reached from a README", asyn
 test("someone else's run stays a teaser for them", async () => {
   const other = await fetch(`${base}/r/${runId}`, { redirect: "manual" });
   const html = await other.text();
-  assert.match(html, /Sign in to see the line/);
+  assert.match(html, /Sign in to read/);
   assert.ok(!html.includes("webhook.site"), "another visitor saw the evidence");
 });
 
@@ -166,6 +227,9 @@ test("a CLI-ingested run is labelled self-reported", async () => {
   const { runId: cliRun } = (await res.json()) as { runId: string };
   const html = await (await get(`/r/${cliRun}`)).text();
   assert.match(html, /Self-reported/);
+  // An older CLI's report carries no audit block. It must render as not-audited,
+  // never as a clean run.
+  assert.match(html, /were not audited/);
 });
 
 test("garbage sent to /api/ingest is refused", async () => {
@@ -189,7 +253,7 @@ test("signing out drops back to the teaser", async () => {
   const out = await get("/auth/signout");
   assert.equal(out.status, 302);
   const html = await (await get(`/r/${runId}`)).text();
-  assert.match(html, /Sign in to see the line/);
+  assert.match(html, /Sign in to read/);
 });
 
 test("the sample report is public, real, and labelled as an example", async () => {
@@ -222,3 +286,18 @@ test("the badge says 1 skill, not 1 skills", async () => {
   assert.ok(!svg.includes("1 skills"));
 });
 
+
+test("privacy and terms are real pages, and they say what the engine actually keeps", async () => {
+  const { privacyPage, termsPage } = await import("../src/web/pages/legal.ts");
+
+  const privacy = privacyPage(null);
+  assert.match(privacy, /never stored/i);
+  assert.match(privacy, /SHA-256/);
+  assert.match(privacy, /ninety days/);
+  // The four things the store keeps, per the invariant in types.ts.
+  for (const kept of ["findings", "counts", "SHA-256", "quotes"]) assert.ok(privacy.includes(kept), `privacy omits ${kept}`);
+
+  const terms = termsPage(null);
+  // The one promise the product must never break.
+  assert.match(terms, /never says a skill is safe/i);
+});

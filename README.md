@@ -32,25 +32,34 @@ Decisions, not implementation details. Changing one changes what the product is.
 5. **Skills are free and complete.** Nothing in a skill scan is withheld. MCP, plugins,
    sub-agents, continuous re-scan, team inventory and policy sit with Atlan Registry.
 
-## The fixed report skeleton
+## Who does the auditing
 
-`src/engine/catalog.ts` declares **8 categories × 50 named checks**. Every scan renders every
-check in the same order whatever was uploaded — a check is either CLEAR or has findings, never
-absent. Three tests enforce it: the reported list must equal the catalog exactly, no finding
-may carry an id outside it, and the same folder must produce a byte-identical report. The
-engine is pattern analysis with no model in the loop, so output is deterministic by
-construction, and two scans of the same library are directly comparable.
+**A model does, and nothing else does.** There are no pattern checks behind it. Every skill —
+its `SKILL.md` and every file beside it — is handed to a model as data, with
+[`skills/skill-audit/SKILL.md`](skills/skill-audit/SKILL.md) as its instructions, and what it
+returns is the report. Code in this repo measures and renders; it never decides what is a
+finding. If you want to change what the scanner looks for, you edit that skill, not this
+codebase.
+
+That skill is a skill like any other: you can read it, fork it, run it yourself in Claude Code
+against the same folder and get the same report with no server involved, and Atlan Scan can
+scan its own auditor — which a test makes it do on every run.
+
+**The fixed report skeleton.** All 8 categories are rendered on every scan whatever was
+uploaded, cleared or not, because a category that was skipped and a category that came back
+empty must never look the same. Re-scanning unchanged files costs nothing and returns the same
+report: an audit is cached against a hash of every file it read, so the diff between two scans
+is about your skills rather than about ours.
 
 ## Layout
 
 ```
-src/engine/          the scanner — no I/O, no network, pure functions
-  review/            the semantic pass: prompt (loaded from skills/), client, verifier
-  catalog.ts         the fixed skeleton: 50 checks with names and descriptions
+src/engine/          assembly and measurement — no I/O, no network, pure functions
+  review/            the audit: prompt (loaded from skills/), client, verifier
+  facts.ts           measurement only — file inventory, frontmatter keys, similarity numbers
   types.ts           categories, severities, the Finding shape
-  parse.ts           decoding, frontmatter, skill-tree building, command-line gating
-  checks/            injection · external · supply · privilege · exfil · opacity · metadata
-  library.ts         cross-skill findings
+  parse.ts           decoding, frontmatter, skill-tree building
+  index.ts           parse → audit → assemble. Decides nothing.
 src/ingest/          GitHub tarball fetch + a dependency-free tar reader
 src/store/runs.ts    node:sqlite, falling back to memory if the disk refuses
 src/web/             server-rendered pages, Atlan tokens, Google auth, badge SVG
@@ -129,42 +138,48 @@ See `RUNBOOK.md` for the accounts and credentials needed to put it on the intern
 
 MCP / plugin / sub-agent scanners, PR checks, re-scan on push, org inventory, rate limiting.
 
-## The semantic review
+## The audit
 
-The 50 checks read the text. They cannot read intent — a step phrased as routine
-bookkeeping that copies board figures somewhere else, or a line telling the agent
-not to mention what it just did. So with `ANTHROPIC_API_KEY` set, each skill is
-also shown to a model as **data** and asked what it would make an agent do.
+Each skill is shown to a model as **data**, in full — `SKILL.md` and every file
+beside it, in one document — and asked what it would make an agent do. A clean
+`SKILL.md` pointing at a dirty `reference.md` is the common shape, not the rare
+one, so the reference file is in there too. A ninth call audits the folder as a
+whole: trigger collisions, near-duplicate bodies, listing cost.
 
-The reviewer's instructions are not in the server. They are
-[`skills/skill-audit/SKILL.md`](skills/skill-audit/SKILL.md) — a skill like any
-other, which the server loads at boot and sends as the system prompt. One copy,
-three consequences: what the hosted scanner asks the model is exactly what you
-can read in the repo; anyone can run the same audit locally in Claude Code with
-no server at all; and Atlan Scan can scan its own auditor, which a test makes it
-do on every run.
+Alongside the files the model gets a `<facts>` block of things already measured —
+the file inventory, which files would not decode, which frontmatter keys are
+present, how similar two descriptions are as a 0-1 number. No threshold is
+applied to any of it and none is implied. A missing `version` key is a fact;
+whether that is worth reporting, and how seriously, is the model's call.
 
-Because that skill has to stand on its own, it audits provenance too — version,
-owner, licence, declared tools — even though the engine covers the same ground.
-Where both say the same thing about the same line, the duplicate is dropped at
-merge time rather than by narrowing what the reviewer is allowed to look at.
+The instructions are not in the server. They are
+[`skills/skill-audit/SKILL.md`](skills/skill-audit/SKILL.md), loaded at boot and
+sent as the system prompt. `npm run prompt` prints exactly what goes over the
+wire; `npm run prompt -- --user` prints a worked example of the per-skill message.
 
-Two properties make this safe to ship in a security tool:
+Three properties make this safe to ship in a security tool:
 
-1. **The model cannot invent a finding.** Every claim it returns must quote text
-   that is found verbatim in the file. `src/engine/review/verify.ts` checks each
-   quote back against the scanned bytes and drops anything it cannot locate,
-   along with any category or severity outside our own vocabulary. The report
-   states how many claims were discarded.
-2. **The model cannot be recruited.** Skills are exactly the place prompt
-   injection lives, and the reviewer is pointed straight at it. The skill text is
-   delimited and declared hostile; an attempt to instruct the reviewer is itself
-   a reportable finding, and the output is a fixed JSON shape that is parsed, not
+1. **The model cannot invent a finding.** Every claim must quote text found
+   verbatim in a file we hold. `src/engine/review/verify.ts` checks each quote
+   back against the scanned bytes and drops anything it cannot locate, along with
+   any category or severity outside our own vocabulary. It is the only place in
+   the scanner allowed to overrule the auditor, and it overrules the evidence,
+   never the judgement. The report states how many claims were discarded.
+2. **The model cannot be recruited.** Skills are exactly where prompt injection
+   lives, and the auditor is pointed straight at it. The skill text is delimited
+   and declared hostile; an attempt to instruct the auditor is itself a
+   reportable finding, and the output is a fixed JSON shape that is parsed, not
    executed.
+3. **An incomplete audit says so.** A skill past the per-run ceiling, one the
+   model failed on, a file clipped for length, and an answer cut off at the
+   output limit are each reported by name. The dirtiest skill in a library
+   produces the longest answer and is therefore the one that hits the output
+   ceiling — so a truncated answer is salvaged finding by finding and flagged as
+   partial, rather than thrown away in silence on the one file that mattered.
 
-Findings from the review sit in their own block, attributed to the model by name.
-They are never merged into the 50 checks — that count is the part which is
-identical on every run, and it stays that way.
+With no `ANTHROPIC_API_KEY` there is no audit at all. The report says so, the CLI
+refuses to print, and the sample page is not built — an empty report would read
+as a clean one.
 
 ### What it costs, and how that is bounded
 
@@ -192,10 +207,10 @@ free. Skills past the ceiling, and skills the reviewer could not complete, are
 named as unreviewed — never counted as clear.
 
 Prompt caching is requested on the system block but does not currently engage:
-Haiku 4.5 will not cache a prefix under 4,096 tokens and ours is about 2,300, and
-the API signals this by returning zero in both cache fields rather than by
-erroring. It is left in because it starts paying the moment the prompt grows past
-that line or the model is switched to a Sonnet, whose minimum is 1,024.
+Haiku 4.5 will not cache a prefix under 4,096 tokens, and the API signals a prefix
+that was too short by returning zero in both cache fields rather than by erroring —
+so check the usage block rather than assuming. The system prompt is the whole
+skill-audit skill now rather than a short brief, which should put it over that line.
 
-With no key, the scan is the deterministic one and the report says the review did
-not run.
+With no key there is no audit, and every surface says so rather than rendering an
+empty result.

@@ -1,13 +1,18 @@
 // Atlan Scan — core types.
 // Design invariants, do not relax without a decision:
-//  1. Every Finding MUST carry a verbatim `evidence` string. A finding without a
-//     quote is a scare, and scares are what the registry graveyard was made of.
+//  1. Every Finding MUST carry a verbatim `evidence` string, located in a file we
+//     hold. A finding without a quote is a scare, and scares are what the registry
+//     graveyard was made of. This is enforced in review/verify.ts, which is the
+//     only place in the scanner allowed to overrule the auditor.
+//  0. The audit is a model reading the files, using skills/skill-audit/SKILL.md.
+//     Nothing in this engine decides what is a finding. Code measures; the model
+//     judges. Do not reintroduce pattern checks that emit findings.
 //  2. We never emit a safety verdict, score or "SAFE" badge. SkillCloak (HKUST,
 //     Jul 2026) evaded all eight tested scanners >90%. We report what is visible
 //     in the text that ships, and we report what we could not read.
 //  3. Skill bodies are never persisted. Only findings, counts and a SHA-256.
 
-export const ENGINE_VERSION = "scan-1.0.0";
+export const ENGINE_VERSION = "scan-2.0.0";
 
 export type Severity = "critical" | "high" | "medium" | "low" | "info";
 
@@ -103,12 +108,11 @@ export interface Finding {
   fix: string;
   ast: string[];
   /**
-   * Where this finding came from. "engine" is the fixed 50-check skeleton:
-   * deterministic, no model. "model" is the semantic review — a model that was
-   * shown the skill as data and asked what it would make an agent do. Model
-   * findings are kept in their own block and never counted into the skeleton,
-   * because the promise that two scans of one folder match belongs to the
-   * engine alone.
+   * Where this finding came from. Every finding in a report is "model" — a model
+   * was shown the skill as data, with the auditor skill as its instructions, and
+   * asked what it would make an agent do. The field is kept because a stored run
+   * from an older engine version may carry "engine", and because a future
+   * second opinion should be attributable rather than blended in.
    */
   origin?: "engine" | "model";
 }
@@ -151,14 +155,6 @@ export interface SkillSummary {
   sha256: string;
 }
 
-export interface CheckResult {
-  id: string;
-  name: string;
-  blurb: string;
-  count: number;
-  worst: Severity | null;
-}
-
 export interface CategoryResult {
   id: CategoryId;
   name: string;
@@ -166,8 +162,8 @@ export interface CategoryResult {
   blurb: string;
   count: number;
   worst: Severity | null;
-  /** Always the full catalog for this category, in catalog order. Cleared checks are listed too. */
-  checks: CheckResult[];
+  /** Findings in this category, worst first. Empty means the auditor reported nothing here. */
+  findings: Finding[];
 }
 
 export interface LibraryStats {
@@ -175,7 +171,11 @@ export interface LibraryStats {
   listingChars: number;
   /** Anthropic truncates description+when_to_use at 1,536 chars per skill. */
   budgetChars: number;
+  skills: number;
+  /** Measured description overlap, 0-1. No threshold applied — the auditor decides. */
   overlapPairs: { a: string; b: string; similarity: number }[];
+  /** Measured body overlap, 0-1, same terms. */
+  duplicatePairs: { a: string; b: string; similarity: number }[];
 }
 
 export interface ScanResult {
@@ -197,12 +197,16 @@ export interface ScanResult {
     bySeverity: Record<Severity, number>;
   };
   library: LibraryStats;
+  /** Files shown to the auditor only in part, because the skill exceeded the per-skill budget. */
+  notFullyRead: { skill: string; path: string; shown: number; of: number }[];
+  /** Skills whose audit was cut off at the model's output ceiling. Partial, and said to be. */
+  partial: { skill: string; kept: number }[];
   /**
-   * The semantic review, when it ran. Kept beside the engine result rather than
-   * merged into it: the 50 checks are the part that is identical every time, and
-   * the model's reading is reported as its own, clearly attributed block.
+   * The audit itself — who read the files, how many were read, what was dropped
+   * for failing verification, and what it cost. Not a footnote to the report:
+   * `findings` above is what this returned.
    */
-  review?: ReviewSummary;
+  audit: ReviewSummary;
 }
 
 export interface ReviewSummary {
@@ -212,8 +216,6 @@ export interface ReviewSummary {
   cached: number;
   /** Claims the model made that could not be verified against the file, and were dropped. */
   dropped: number;
-  /** Findings the engine had already reported on the same skill, category and line. */
-  duplicates?: number;
   failures: { skill: string; reason: string }[];
   findings: Finding[];
   /** Tokens this run spent. Kept so cost is visible rather than inferred from a bill. */
@@ -222,10 +224,10 @@ export interface ReviewSummary {
 
 export type ENGINE_VERSION_T = string;
 
-export interface CheckContext {
-  skill: SkillDoc;
-  /** Command-like lines only: fenced code, indented code, or a line starting with a shell verb. */
-  commandLines: { line: number; text: string }[];
+/** Files shown only in part. Reported, because a clipped file must never read as a clean one. */
+export interface Clipped {
+  skill: string;
+  path: string;
+  shown: number;
+  of: number;
 }
-
-export type Check = (ctx: CheckContext) => Finding[];

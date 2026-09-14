@@ -27,15 +27,15 @@ rows.push([
     : "dev stub (set GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET in .env)",
 ]);
 rows.push([
-  "semantic review",
+  "auditor",
   process.env["ANTHROPIC_API_KEY"]
-    ? `on (${process.env["SCAN_REVIEW_MODEL"] ?? "claude-haiku-4-5"})`
-    : "off — 50 deterministic checks only (set ANTHROPIC_API_KEY in .env)",
+    ? `${process.env["SCAN_REVIEW_MODEL"] ?? "claude-haiku-4-5"}`
+    : "NONE — the model is the audit, so nothing can be scanned (set ANTHROPIC_API_KEY in .env)",
 ]);
 if (process.env["ANTHROPIC_API_KEY"]) {
-  rows.push(["  review ceiling", `${process.env["SCAN_REVIEW_MAX_SKILLS"] ?? 25} skills per run`]);
+  rows.push(["  audit ceiling", `${process.env["SCAN_REVIEW_MAX_SKILLS"] ?? 25} skills per run`]);
   rows.push([
-    "  review budget",
+    "  audit budget",
     process.env["SCAN_REVIEW_BUDGET_USD"]
       ? `$${Number(process.env["SCAN_REVIEW_BUDGET_USD"]).toFixed(2)} per process`
       : "none — set SCAN_REVIEW_BUDGET_USD to cap spend",

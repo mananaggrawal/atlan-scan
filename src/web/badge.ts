@@ -16,17 +16,29 @@ function width(text: string, pad = 18): number {
 
 export function badgeSvg(r: ScanResult | null, ageDays: number | null): string {
   const left = "atlan scan";
-  const flagged = r
-    ? r.categories.reduce((n, c) => n + c.checks.filter((k) => k.count > 0).length, 0)
-    : 0;
-  const total = r ? r.categories.reduce((n, c) => n + c.checks.length, 0) : 45;
-  const right = r
-    ? `${r.totals.skills} skill${r.totals.skills === 1 ? "" : "s"} · ${flagged}/${total} flagged${ageDays !== null ? ` · ${ageDays}d` : ""}`
-    : "not published";
+  // The badge counts findings, not checks. There is no fixed check count any more —
+  // the audit is a model reading the files — so a "3/50" badge would be inventing a
+  // denominator, and an unaudited run must say so rather than render a zero.
+  const right = !r
+    ? "not published"
+    : !r.audit.ran
+      ? "not audited"
+      : `${r.totals.skills} skill${r.totals.skills === 1 ? "" : "s"} · ${
+          r.totals.findings === 0 ? "nothing reported" : `${r.totals.findings} finding${r.totals.findings === 1 ? "" : "s"}`
+        }${ageDays !== null ? ` · ${ageDays}d` : ""}`;
   const lw = width(left, 20);
   const rw = width(right, 22);
   const w = lw + rw;
-  const accent = !r ? "#77778E" : flagged === 0 ? "#2E8B57" : flagged > total * 0.25 ? "#D01B49" : "#B06A08";
+  // Colour follows the worst severity actually reported. Green never means safe here —
+  // it means the auditor read the files and reported nothing, which the badge text says.
+  const worst = r?.totals.bySeverity;
+  const accent = !r || !r.audit.ran
+    ? "#77778E"
+    : worst && (worst.critical > 0 || worst.high > 0)
+      ? "#D01B49"
+      : worst && (worst.medium > 0 || worst.low > 0)
+        ? "#B06A08"
+        : "#2E8B57";
   const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="20" role="img" aria-label="${esc(left)}: ${esc(right)}">
   <title>${esc(left)}: ${esc(right)}</title>

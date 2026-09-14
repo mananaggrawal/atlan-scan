@@ -1,6 +1,6 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { pathToFileURL } from "node:url";
-import { newRunId, runScan, runScanWithReview } from "../engine/index.ts";
+import { newRunId, runScan } from "../engine/index.ts";
 import type { ScanResult } from "../engine/types.ts";
 import type { RawFile } from "../engine/parse.ts";
 import { fetchRepoFiles, LIMITS, parseRepoInput, repoInputError } from "../ingest/github.ts";
@@ -9,6 +9,7 @@ import { reviewCache } from "../store/reviewcache.ts";
 import { badgeSvg } from "./badge.ts";
 import { ensureSampleRun, SAMPLE_RUN_ID } from "./sample.ts";
 import { landingPage } from "./pages/landing.ts";
+import { privacyPage, termsPage } from "./pages/legal.ts";
 import { scanPage } from "./pages/scan.ts";
 import { historyPage, resultPage } from "./pages/result.ts";
 import { page, esc } from "./layout.ts";
@@ -119,13 +120,15 @@ async function handleScan(req: IncomingMessage, res: ServerResponse, sid: string
     });
   }
 
-  const result = await runScanWithReview({ files, source: { kind, label } }, reviewCache);
+  const result = await runScan({ files, source: { kind, label } }, reviewCache);
   putRun(result, sid, currentUser(req)?.id ?? null);
   return json(res, 200, { runId: result.runId, findings: result.totals.findings });
 }
 
 export function makeServer() {
-  ensureSampleRun();
+  // Fire-and-forget: the sample costs model calls to build, and the server must
+  // come up and answer /healthz whether or not that succeeds.
+  void ensureSampleRun().catch((err: unknown) => console.warn(`[sample] ${(err as Error).message}`));
   return createServer(async (req, res) => {
   const url = new URL(req.url ?? "/", `http://${req.headers.host ?? "localhost"}`);
   const sid = sessionId(req, res);
@@ -148,11 +151,27 @@ export function makeServer() {
       if (!incoming || !Array.isArray(incoming.findings) || !Array.isArray(incoming.categories)) {
         return json(res, 400, { error: "That is not a scan result." });
       }
+      // A report published from someone's machine may have been produced by an older
+      // CLI. Fill in what a current report carries rather than rendering a broken page,
+      // and default the audit block to "did not run" — never to a clean result.
       const result: ScanResult = {
         ...incoming,
         runId: newRunId(),
         scannedAt: new Date().toISOString(),
         source: { kind: "cli", label: String(incoming.source?.label ?? "local folder").slice(0, 120) },
+        unreadable: incoming.unreadable ?? [],
+        notFullyRead: incoming.notFullyRead ?? [],
+        partial: incoming.partial ?? [],
+        library: {
+          listingChars: incoming.library?.listingChars ?? 0,
+          budgetChars: incoming.library?.budgetChars ?? 1536,
+          skills: incoming.library?.skills ?? incoming.totals?.skills ?? 0,
+          overlapPairs: incoming.library?.overlapPairs ?? [],
+          duplicatePairs: incoming.library?.duplicatePairs ?? [],
+        },
+        audit: incoming.audit ?? {
+          ran: false, model: "unknown", reviewed: 0, cached: 0, dropped: 0, failures: [], findings: [],
+        },
       };
       putRun(result, sid, currentUser(req)?.id ?? null);
       return json(res, 200, { runId: result.runId });
@@ -198,6 +217,8 @@ export function makeServer() {
     }
 
     if (req.method === "GET" && path === "/") return send(res, 200, landingPage(user));
+    if (req.method === "GET" && path === "/privacy") return send(res, 200, privacyPage(user));
+    if (req.method === "GET" && path === "/terms") return send(res, 200, termsPage(user));
     if (req.method === "GET" && path === "/scan") {
       const last = user ? runsFor(user.id)[0]?.result.runId ?? null : null;
       return send(res, 200, scanPage(user, last));

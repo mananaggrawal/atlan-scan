@@ -1,20 +1,23 @@
 /**
  * The only place Atlan Scan talks to a model. Zero dependencies: one fetch.
  *
- * Inactive until ANTHROPIC_API_KEY is set. With no key the scan runs exactly as
- * it does today — 50 deterministic checks — and the report says the semantic
- * review did not run, rather than pretending it passed.
+ * Inactive until ANTHROPIC_API_KEY is set. With no key there is no audit at all —
+ * the model IS the audit — so the report says plainly that the skills were not
+ * audited, rather than rendering an empty result that reads as clean.
  */
 
 export const REVIEW_MODEL = process.env["SCAN_REVIEW_MODEL"] ?? "claude-haiku-4-5";
-const ENDPOINT = "https://api.anthropic.com/v1/messages";
 /**
- * Output tokens cost several times what input tokens do, and findings are capped
- * at six per skill, so this only ever needs to cover six compact objects.
+ * Read per call, not at import: the end-to-end tests stand a stub in front of this
+ * and set the variable after the module graph has already loaded.
  */
-const MAX_TOKENS = Number(process.env["SCAN_REVIEW_MAX_TOKENS"] ?? 1000);
-/** A skill larger than this is reviewed on its first slice only; the engine still reads all of it. */
-export const MAX_REVIEW_CHARS = Number(process.env["SCAN_REVIEW_MAX_CHARS"] ?? 24_000);
+const endpoint = (): string => process.env["SCAN_REVIEW_ENDPOINT"] ?? "https://api.anthropic.com/v1/messages";
+/**
+ * Output tokens cost several times what input tokens do. The auditor now owns the
+ * whole report rather than a semantic footnote to it, so this has to cover a real
+ * finding list — a badly-written skill legitimately produces a dozen.
+ */
+const MAX_TOKENS = Number(process.env["SCAN_REVIEW_MAX_TOKENS"] ?? 16_000);
 const TIMEOUT_MS = Number(process.env["SCAN_REVIEW_TIMEOUT_MS"] ?? 25_000);
 
 export function reviewEnabled(): boolean {
@@ -36,6 +39,8 @@ export interface Usage {
 export interface ReviewCall {
   json: unknown;
   usage: Usage;
+  /** The model ran out of output budget before finishing. What came back is partial. */
+  truncated: boolean;
 }
 
 /** Per-million-token prices, USD. Override when changing model. */
@@ -77,18 +82,74 @@ export function resetSpend(): void {
   spent = 0;
 }
 
+/**
+ * Recover the findings from a JSON array that was cut off mid-object.
+ *
+ * This is not politeness about malformed output — it is the difference between a
+ * report and a blank page. The dirtiest skill in a library produces the longest
+ * answer, so it is the one that hits the output ceiling, and a strict parse throws
+ * away every finding it had already written. That failure is silent and it lands
+ * on exactly the file that mattered.
+ *
+ * So: walk the array, keep every object that closed, stop at the one that did not.
+ * Quotes and escapes are tracked so a brace inside a quoted line does not fool it.
+ */
+export function salvageFindings(body: string): Record<string, unknown>[] | null {
+  const key = body.indexOf('"findings"');
+  if (key === -1) return null;
+  const open = body.indexOf("[", key);
+  if (open === -1) return null;
+
+  const out: Record<string, unknown>[] = [];
+  let depth = 0;
+  let start = -1;
+  let inString = false;
+  let escaped = false;
+
+  for (let i = open + 1; i < body.length; i++) {
+    const ch = body[i]!;
+    if (inString) {
+      if (escaped) escaped = false;
+      else if (ch === "\\") escaped = true;
+      else if (ch === '"') inString = false;
+      continue;
+    }
+    if (ch === '"') { inString = true; continue; }
+    if (ch === "{") { if (depth === 0) start = i; depth++; continue; }
+    if (ch === "}") {
+      depth--;
+      if (depth === 0 && start >= 0) {
+        try {
+          out.push(JSON.parse(body.slice(start, i + 1)) as Record<string, unknown>);
+        } catch {
+          // One unparseable object does not invalidate the ones around it.
+        }
+        start = -1;
+      }
+      continue;
+    }
+    if (ch === "]" && depth === 0) break;
+  }
+  return out;
+}
+
 /** Pull the JSON object out of a model turn that may have wrapped it in a fence. */
 export function extractJson(text: string): unknown {
   const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/);
   const body = (fenced?.[1] ?? text).trim();
   const start = body.indexOf("{");
+  if (start === -1) throw new ReviewUnavailable("the reviewer did not return JSON");
   const end = body.lastIndexOf("}");
-  if (start === -1 || end <= start) throw new ReviewUnavailable("the reviewer did not return JSON");
-  try {
-    return JSON.parse(body.slice(start, end + 1));
-  } catch (err) {
-    throw new ReviewUnavailable(`the reviewer returned JSON we could not parse: ${(err as Error).message}`);
+  if (end > start) {
+    try {
+      return JSON.parse(body.slice(start, end + 1));
+    } catch {
+      // Fall through to salvage.
+    }
   }
+  const salvaged = salvageFindings(body.slice(start));
+  if (salvaged && salvaged.length) return { findings: salvaged, truncated: true };
+  throw new ReviewUnavailable("the reviewer returned JSON we could not parse");
 }
 
 export async function askReviewer(system: string, user: string): Promise<ReviewCall> {
@@ -101,7 +162,7 @@ export async function askReviewer(system: string, user: string): Promise<ReviewC
   const ctl = new AbortController();
   const timer = setTimeout(() => ctl.abort(), TIMEOUT_MS);
   try {
-    const res = await fetch(ENDPOINT, {
+    const res = await fetch(endpoint(), {
       method: "POST",
       signal: ctl.signal,
       headers: {
@@ -114,11 +175,10 @@ export async function askReviewer(system: string, user: string): Promise<ReviewC
         max_tokens: MAX_TOKENS,
         temperature: 0,
         // The system prompt is byte-identical on every call, so it is marked for
-        // caching. Note this is currently a no-op: Haiku 4.5 will not cache a
-        // prefix under 4,096 tokens and ours is about 2,300, and the API says so
-        // by returning zero in both cache fields rather than by erroring. It is
-        // left in deliberately — it starts paying the moment the prompt grows past
-        // that line or the model is switched to a Sonnet, whose minimum is 1,024.
+        // caching. It is the whole skill-audit skill now rather than a short review
+        // brief, which should put it past Haiku 4.5's 4,096-token minimum — check
+        // the cache fields in the usage block rather than assuming, because the API
+        // reports a prefix that was too short by returning zero, not by erroring.
         system: [{ type: "text", text: system, cache_control: { type: "ephemeral" } }],
         messages: [{ role: "user", content: user }],
       }),
@@ -128,6 +188,7 @@ export async function askReviewer(system: string, user: string): Promise<ReviewC
       throw new ReviewUnavailable(`reviewer returned ${res.status}${detail ? `: ${detail.slice(0, 180)}` : ""}`);
     }
     const body = (await res.json()) as {
+      stop_reason?: string;
       content?: { type?: string; text?: string }[];
       usage?: { input_tokens?: number; output_tokens?: number; cache_creation_input_tokens?: number; cache_read_input_tokens?: number };
     };
@@ -142,7 +203,11 @@ export async function askReviewer(system: string, user: string): Promise<ReviewC
     // Counted before the JSON is parsed: the call was billed whether or not we
     // can use what came back.
     spent += costOf(usage);
-    return { json: extractJson(text), usage };
+    const json = extractJson(text);
+    // An answer cut off at the output ceiling is incomplete by definition. Whatever
+    // was salvaged is still reported, but the run has to say the auditor did not finish.
+    const truncated = body.stop_reason === "max_tokens" || Boolean((json as { truncated?: boolean }).truncated);
+    return { json, usage, truncated };
   } catch (err) {
     if (err instanceof ReviewUnavailable) throw err;
     if ((err as Error).name === "AbortError") throw new ReviewUnavailable("the reviewer timed out");

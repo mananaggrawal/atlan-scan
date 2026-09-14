@@ -111,7 +111,7 @@ The package name `atlan-scan` must be free, or scope it (`@yourname/atlan-scan`)
 ```bash
 curl -s localhost:8787/healthz                 # {"ok":true}
 npm test                                        # 38 passing
-npm run scan -- fixtures/demo-library           # 28 of 50 checks flagged, exit 1
+npm run scan -- fixtures/demo-library           # ~30 findings in 8 categories, exit 1
 ```
 
 On boot the server prints what it is actually using:

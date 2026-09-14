@@ -1,5 +1,4 @@
 import { page, type User } from "../layout.ts";
-import { CHECK_COUNT } from "../../engine/catalog.ts";
 
 const PILLARS = [
   { id: "scan", tab: "Atlan Scan", lead: "Vets what agents install",
@@ -10,7 +9,7 @@ const PILLARS = [
       <div class="rw"><span class="nm">deploy-helper</span><span class="d"><code>curl | bash</code> in the setup steps</span><span class="pill critical">critical</span></div>
       <div class="rw"><span class="nm">ui-design</span><span class="d">instruction hidden in an HTML comment</span><span class="pill high">high</span></div>
       <div class="rw"><span class="nm">invoice-parse</span><span class="d">competes with <code>invoice-extract</code> for the same prompts</span><span class="pill low">low</span></div>
-      <div class="rw"><span class="nm">changelog</span><span class="d faint">nothing flagged across ${CHECK_COUNT} checks</span><span class="pill none">cleared</span></div>
+      <div class="rw"><span class="nm">changelog</span><span class="d faint">read in full, nothing reported</span><span class="pill none">cleared</span></div>
       <div class="rw"><span class="nm faint">render.bin</span><span class="d faint">binary — we could not read it</span><span class="pill medium">unreadable</span></div>
     </div>` },
   { id: "control", tab: "Atlan Control", lead: "Governs the agent fleet",
@@ -44,18 +43,20 @@ const PILLARS = [
 
 const STEPS = [
   { n: "01", h: "Point", p: "Drop a folder, or paste a public repo. Nothing is installed and nothing is run." },
-  { n: "02", h: "Read", p: `${CHECK_COUNT} checks over every file — and an honest list of anything that could not be read.` },
+  { n: "02", h: "Read", p: "A model reads every file the way your agent would — and gives an honest list of anything it could not read." },
   { n: "03", h: "See the line", p: "Each finding names the skill, the line, the quoted text and the fix." },
   { n: "04", h: "Re-scan", p: "Run it again after the fix, or when the skill's author ships a change." },
 ];
 
 const FAQ = [
   { q: "What does it actually read?",
-    a: `Every file in the folder — the SKILL.md, its frontmatter, reference files, scripts, and anything sitting beside them. ${CHECK_COUNT} named checks across 8 categories.` },
+    a: "Every file in the folder — the SKILL.md, its frontmatter, reference files, scripts, and anything sitting beside them. A model reads them as instructions that will execute, and reports across 8 categories mapped to the OWASP Agentic Skills Top 10." },
   { q: "Will two scans of the same folder match?",
-    a: "Exactly. Pattern analysis, no model in the loop, and every check runs whether it fires or not. Re-scan next month and the diff is real." },
+    a: "Unchanged files give back the same report — a skill\u0027s audit is keyed to the bytes it was read from, so a re-scan costs nothing and returns what it returned before. Change a file and that skill is read again. Every category is reported either way, cleared or not, so the diff is about your skills and not about ours." },
   { q: "What do I pay for?",
     a: "Nothing, for skills \u2014 every finding, every quoted line, every fix. MCPs, plugins, sub-agents and continuous monitoring ship with Atlan Registry." },
+  { q: "Who does the reading?",
+    a: "A model, working from a published skill you can read: skills/skill-audit/SKILL.md in our repo. It is the same instructions the hosted scanner uses, so you can run the audit yourself in Claude Code and get the same report without us. Every quote it produces is checked back against your file, and anything that does not match is dropped before you see it." },
   { q: "Why sign in to see the detail?",
     a: "So the scan is still there next week, and so re-running it means something. Counts and category results are visible before you do." },
   { q: "Can a clean report be wrong?",
