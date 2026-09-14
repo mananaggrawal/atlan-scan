@@ -540,14 +540,15 @@ table.tbl{display:block;max-width:100%;overflow-x:auto}
 .caveat li + li{margin-top:6px}
 .caveat-hard{border-left-color:var(--high);color:var(--ink);font-size:13.5px;line-height:1.6;display:block}
 
-/* Footer: one short link row rather than three columns of mostly-dead links. */
-.flinks{display:flex;flex-wrap:wrap;gap:10px 26px;align-items:flex-start}
-.flinks a{font-size:13.5px;color:var(--muted)}
+/* Footer: one short column of links rather than three columns of mostly-dead ones.
+   Stacked, not in a row — a horizontal strip reads as a nav bar, not a footer. */
+.flinks{display:flex;flex-direction:column;gap:11px;align-items:flex-start}
+.flinks a{font-size:13.5px;color:var(--muted);line-height:1.3}
 .flinks a:hover{color:var(--ink-strong)}
 /* Belt and braces on the heading: the label is clamped in the renderer too, but a
    stored run from an older build must not be able to produce a wall of text. */
 .pagehead .ph h1{overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 /* Two children now, not four. Declared last so it beats the earlier four-column rules. */
-.fcols{grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:40px}
+.fcols{grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:40px;align-items:start}
 @media (max-width:700px){.fcols{grid-template-columns:1fr;gap:24px}}
 `;
