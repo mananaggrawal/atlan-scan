@@ -1,6 +1,7 @@
 import { randomBytes } from "node:crypto";
 import type {
   CategoryResult, Finding, ScanResult, Severity, SkillSummary,
+  ReviewSummary,
 } from "./types.ts";
 import { CATEGORIES, ENGINE_VERSION, SEVERITY_ORDER, worstOf } from "./types.ts";
 import { CHECK_CATALOG } from "./catalog.ts";
@@ -13,6 +14,7 @@ import { exfilChecks } from "./checks/exfil.ts";
 import { opacityChecks } from "./checks/opacity.ts";
 import { metadataChecks, provenanceChecks } from "./checks/metadata.ts";
 import { libraryFindings } from "./library.ts";
+import { reviewSkills, type ReviewCache } from "./review/index.ts";
 
 const PER_SKILL_CHECKS = [
   ...injectionChecks,
@@ -34,7 +36,7 @@ export interface ScanInput {
   source: { kind: "upload" | "github" | "cli"; label: string };
 }
 
-export function runScan({ files, source }: ScanInput): ScanResult {
+export function runScan({ files, source }: ScanInput, review?: ReviewSummary): ScanResult {
   const tree = parseTree(files);
   const findings: Finding[] = [];
 
@@ -115,6 +117,7 @@ export function runScan({ files, source }: ScanInput): ScanResult {
   for (const f of findings) bySeverity[f.severity]++;
 
   return {
+    ...(review ? { review } : {}),
     runId: newRunId(),
     scannedAt: new Date().toISOString(),
     engineVersion: ENGINE_VERSION,
@@ -137,3 +140,23 @@ export function runScan({ files, source }: ScanInput): ScanResult {
 
 export { CATEGORIES, ENGINE_VERSION, SEVERITY_ORDER, worstOf };
 export { CHECK_CATALOG } from "./catalog.ts";
+
+/**
+ * The engine, then the reviewer. The engine result is complete and returned in
+ * full whether or not the reviewer ran; the review is attached beside it. A
+ * reviewer that is off, rate-limited or slow costs you the semantic block and
+ * nothing else.
+ */
+export async function runScanWithReview(input: ScanInput, cache?: ReviewCache): Promise<ScanResult> {
+  const tree = parseTree(input.files);
+  const report = await reviewSkills(tree.skills, cache);
+  return runScan(input, {
+    ran: report.ran,
+    model: report.model,
+    reviewed: report.reviewed,
+    cached: report.cached,
+    dropped: report.dropped,
+    failures: report.failures,
+    findings: report.findings,
+  });
+}

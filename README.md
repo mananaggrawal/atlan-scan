@@ -127,3 +127,35 @@ See `RUNBOOK.md` for the accounts and credentials needed to put it on the intern
 ## Not built yet
 
 MCP / plugin / sub-agent scanners, PR checks, re-scan on push, org inventory, rate limiting.
+
+## The semantic review
+
+The 50 checks read the text. They cannot read intent — a step phrased as routine
+bookkeeping that copies board figures somewhere else, or a line telling the agent
+not to mention what it just did. So with `ANTHROPIC_API_KEY` set, each skill is
+also shown to a model as **data** and asked what it would make an agent do.
+
+Two properties make this safe to ship in a security tool:
+
+1. **The model cannot invent a finding.** Every claim it returns must quote text
+   that is found verbatim in the file. `src/engine/review/verify.ts` checks each
+   quote back against the scanned bytes and drops anything it cannot locate,
+   along with any category or severity outside our own vocabulary. The report
+   states how many claims were discarded.
+2. **The model cannot be recruited.** Skills are exactly the place prompt
+   injection lives, and the reviewer is pointed straight at it. The skill text is
+   delimited and declared hostile; an attempt to instruct the reviewer is itself
+   a reportable finding, and the output is a fixed JSON shape that is parsed, not
+   executed.
+
+Findings from the review sit in their own block, attributed to the model by name.
+They are never merged into the 50 checks — that count is the part which is
+identical on every run, and it stays that way.
+
+Cost is bounded by a content-hash cache (same bytes, same model, same prompt, no
+second call) and a per-run ceiling (`SCAN_REVIEW_MAX_SKILLS`, default 25).
+Skills past the ceiling, and skills the reviewer could not complete, are named as
+unreviewed — never counted as clear.
+
+With no key, the scan is the deterministic one and the report says the review did
+not run.

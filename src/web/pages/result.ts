@@ -19,6 +19,41 @@ function findingBlock(f: Finding): string {
   </div>`;
 }
 
+/**
+ * The semantic review, reported as its own block.
+ *
+ * It is deliberately not folded into the category cards. The 50 checks are the
+ * part that is identical on every run; this is a model's reading, and the report
+ * says so, names the model, and says how many of its claims were discarded for
+ * quoting text that was not in the file.
+ */
+function reviewPanel(r: ScanResult, full: boolean): string {
+  const rev = r.review;
+  if (!rev?.ran) return "";
+
+  const head = `<div class="cathead">
+      <h3>Read by a model</h3>
+      <span class="astbadge">${esc(rev.model)}</span>
+      ${rev.findings.length === 0
+        ? `<span class="status clear">✓ nothing further</span>`
+        : `<span class="status flag ${rev.findings[0]?.severity ?? "low"}">${plural(rev.findings.length, "finding")}</span>`}
+    </div>`;
+
+  const note = `<p class="revnote">A model was shown each skill as data and asked what it would make an agent do — the part a pattern cannot reach. Every quote below was checked back against the file${rev.dropped > 0 ? `, and ${plural(rev.dropped, "claim")} that did not match the text ${rev.dropped === 1 ? "was" : "were"} dropped` : ""}.</p>`;
+
+  const fails = rev.failures.length
+    ? `<p class="revfail">${plural(rev.failures.length, "skill")} could not be reviewed: ${esc(rev.failures.map((f) => `${f.skill} (${f.reason})`).join("; "))}. ${rev.failures.length === 1 ? "It was" : "They were"} not counted as clear.</p>`
+    : "";
+
+  const body = rev.findings.length === 0
+    ? `<p class="revempty">Nothing beyond what the checks already found.</p>`
+    : full
+      ? rev.findings.map(findingBlock).join("")
+      : lockRow(r.runId, "Sign in to see what it found");
+
+  return `<div class="catcard review">${head}<div class="catbody">${note}${fails}${body}</div></div>`;
+}
+
 function lockRow(runId: string, label: string): string {
   return `<div class="lockrow">
     <div class="bars"><div><i></i><i></i><i></i></div><div><i></i><i></i><i></i></div><div><i></i><i></i><i></i></div></div>
@@ -173,6 +208,7 @@ export function resultPage(r: ScanResult, user: User | null, opts: ResultOpts = 
   <div class="cols" style="margin-top:26px">
     <div>
       ${r.categories.map((c) => categoryCard(c, r, full)).join("")}
+      ${reviewPanel(r, full)}
       ${opts.isOwner ? sharePanel(r.runId, opts.baseUrl ?? "") : ""}
       ${opts.isPublic ? "" : registryCta()}
     </div>

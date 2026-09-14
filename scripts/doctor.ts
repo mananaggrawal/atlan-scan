@@ -26,9 +26,15 @@ rows.push([
     ? "configured"
     : "dev stub (set GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET in .env)",
 ]);
+rows.push([
+  "semantic review",
+  process.env["ANTHROPIC_API_KEY"]
+    ? `on (${process.env["SCAN_REVIEW_MODEL"] ?? "claude-haiku-4-5"})`
+    : "off — 50 deterministic checks only (set ANTHROPIC_API_KEY in .env)",
+]);
 rows.push(["session secret", process.env["SESSION_SECRET"] ? "set" : "default — fine locally, change in production"]);
 
 console.log("");
-for (const [k, v] of rows) console.log(`  ${k.padEnd(16)} ${v}`);
+for (const [k, v] of rows) console.log(`  ${k.padEnd(17)} ${v}`);
 console.log("");
 process.exit(ok ? 0 : 1);

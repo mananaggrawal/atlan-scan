@@ -1,10 +1,11 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { pathToFileURL } from "node:url";
-import { newRunId, runScan } from "../engine/index.ts";
+import { newRunId, runScan, runScanWithReview } from "../engine/index.ts";
 import type { ScanResult } from "../engine/types.ts";
 import type { RawFile } from "../engine/parse.ts";
 import { fetchRepoFiles, LIMITS, parseRepoInput, repoInputError } from "../ingest/github.ts";
 import { claimRuns, getRun, putRun, runsFor, setOwner, storeKind } from "../store/runs.ts";
+import { reviewCache } from "../store/reviewcache.ts";
 import { badgeSvg } from "./badge.ts";
 import { ensureSampleRun, SAMPLE_RUN_ID } from "./sample.ts";
 import { landingPage } from "./pages/landing.ts";
@@ -118,7 +119,7 @@ async function handleScan(req: IncomingMessage, res: ServerResponse, sid: string
     });
   }
 
-  const result = runScan({ files, source: { kind, label } });
+  const result = await runScanWithReview({ files, source: { kind, label } }, reviewCache);
   putRun(result, sid, currentUser(req)?.id ?? null);
   return json(res, 200, { runId: result.runId, findings: result.totals.findings });
 }

@@ -489,4 +489,10 @@ footer.bot{border-top:1px solid var(--line);margin-top:74px;padding:48px 0 34px;
 .shelf .badge{margin-top:9px;align-self:flex-start;font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;border-radius:4px;padding:3px 7px}
 .shelf .badge.ok{color:var(--clear);background:#EAF5EF}
 .shelf .badge.wait{color:var(--med);background:var(--med-bg)}
+
+/* The semantic review block. Marked apart from the deterministic cards on purpose. */
+.catcard.review{border-color:var(--blue-line);background:linear-gradient(180deg,var(--blue-soft) 0,transparent 120px)}
+.catcard.review .revnote{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:14px}
+.catcard.review .revfail{font-size:13px;color:var(--high);background:var(--high-bg);border-radius:7px;padding:10px 12px;margin-bottom:14px;line-height:1.55}
+.catcard.review .revempty{font-size:13.5px;color:var(--muted)}
 `;

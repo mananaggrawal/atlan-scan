@@ -102,6 +102,15 @@ export interface Finding {
   why: string;
   fix: string;
   ast: string[];
+  /**
+   * Where this finding came from. "engine" is the fixed 50-check skeleton:
+   * deterministic, no model. "model" is the semantic review — a model that was
+   * shown the skill as data and asked what it would make an agent do. Model
+   * findings are kept in their own block and never counted into the skeleton,
+   * because the promise that two scans of one folder match belongs to the
+   * engine alone.
+   */
+  origin?: "engine" | "model";
 }
 
 export interface FileEntry {
@@ -188,6 +197,23 @@ export interface ScanResult {
     bySeverity: Record<Severity, number>;
   };
   library: LibraryStats;
+  /**
+   * The semantic review, when it ran. Kept beside the engine result rather than
+   * merged into it: the 50 checks are the part that is identical every time, and
+   * the model's reading is reported as its own, clearly attributed block.
+   */
+  review?: ReviewSummary;
+}
+
+export interface ReviewSummary {
+  ran: boolean;
+  model: string;
+  reviewed: number;
+  cached: number;
+  /** Claims the model made that could not be verified against the file, and were dropped. */
+  dropped: number;
+  failures: { skill: string; reason: string }[];
+  findings: Finding[];
 }
 
 export type ENGINE_VERSION_T = string;
