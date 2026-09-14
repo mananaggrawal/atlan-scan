@@ -160,7 +160,7 @@ export function landingPage(user: User | null): string {
   <div class="finalcta">
     <span class="ctabrand"><span class="sq"></span>Atlan <em>Scan</em></span>
     <h2>You didn't read it.<br>Your agent will.</h2>
-    <p>One folder, about a minute, and you'll know exactly what's in there.</p>
+    <p>Scan a skill, and you'll know exactly what's in there.</p>
     <div class="ctarow">
       <a class="btn btn-primary btn-lg" href="/scan">Scan a folder</a>
       <a class="btn btn-ghost btn-lg" href="/p/sample">See a real report first</a>
