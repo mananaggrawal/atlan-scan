@@ -302,6 +302,9 @@ body{display:flex;flex-direction:column;min-height:100vh}
 .sectop{max-width:34em}
 .sectop h2{margin-top:13px}
 .sectop p{font-size:16px;color:var(--muted);margin-top:13px;line-height:1.55}
+.sectop.w{max-width:56em}
+.sectop.w h2{max-width:15em}
+.sectop p.wide{max-width:none}
 .steps4{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:0;margin-top:34px;border-top:1px solid var(--line)}
 .st4{padding:22px 24px 24px;border-right:1px solid var(--line-soft);position:relative}
 .st4:last-child{border-right:0}
@@ -332,7 +335,7 @@ body{display:flex;flex-direction:column;min-height:100vh}
 .faq summary::after{content:"+";position:absolute;right:8px;top:18px;font-family:var(--body);font-weight:400;font-size:21px;color:var(--faint);line-height:1}
 .faq details[open] summary::after{content:"–"}
 /* a readable measure, and no hyphen-breaking mid-word */
-.faq p{font-size:15px;color:var(--muted);line-height:1.62;padding:0 44px 22px 0;max-width:44em;margin-top:-2px;hyphens:none;overflow-wrap:normal}
+.faq p{font-size:15px;color:var(--muted);line-height:1.62;padding:0 44px 22px 0;max-width:none;text-wrap:pretty;margin-top:-2px;hyphens:none;overflow-wrap:normal}
 .finalcta{background:var(--blue-soft);border:1px solid var(--blue-line);border-radius:16px;padding:62px 40px 54px;text-align:center;margin-top:8px}
 .ctabrand{display:inline-flex;align-items:center;gap:9px;font-family:var(--display);font-weight:600;
   font-size:22px;letter-spacing:-.03em;word-spacing:-3.5px;color:var(--ink-strong);margin-bottom:22px}
@@ -461,7 +464,20 @@ footer.bot{border-top:1px solid var(--line);margin-top:74px;padding:48px 0 34px;
 .mock .fleet .tagt.ok{fill:var(--clear)}
 .mock .fleet .tagt.warn{fill:var(--med)}
 
+.scanp .hd,.scanp .rw{display:grid;grid-template-columns:130px 1fr 92px;gap:16px;align-items:center}
+.scanp .hd{font-family:var(--mono);font-size:8.5px;letter-spacing:.16em;color:var(--faint);padding-bottom:10px;border-bottom:1px solid var(--line-soft)}
+.scanp .hd .r,.scanp .rw .pill{justify-self:end}
+.scanp .rw{padding:11px 0;border-bottom:1px solid var(--line-soft);font-size:13.5px}
+.scanp .rw:last-child{border-bottom:0}
+.scanp .nm{font-family:var(--mono);font-size:12.5px;color:var(--ink-strong)}
+.scanp .d{color:var(--ink)}
+.scanp .d.faint,.scanp .nm.faint{color:var(--faint)}
+.scanp code{font-family:var(--mono);font-size:11.5px;background:var(--surface-2);padding:1px 5px;border-radius:4px;color:var(--ink-strong)}
+@media (max-width:700px){.scanp .hd,.scanp .rw{grid-template-columns:1fr auto;gap:8px}.scanp .d{grid-column:1/-1;font-size:12.5px}.scanp .hd span:nth-child(2){display:none}}
+
 .flow{display:flex;flex-direction:column;gap:1px}
+.flow .fhd{display:flex;gap:14px;font-family:var(--mono);font-size:8.5px;letter-spacing:.16em;color:var(--faint);padding-bottom:10px;border-bottom:1px solid var(--line-soft)}
+.flow .fhd .g{flex:1}
 .flow .fr{display:flex;align-items:center;gap:14px;padding:13px 2px;border-top:1px solid var(--line-soft);font-size:13.5px}
 .flow .fr:first-child{border-top:0}
 .flow .fr .t{font-family:var(--mono);font-size:11px;color:var(--faint);flex:none}
@@ -542,61 +558,33 @@ footer.bot{border-top:1px solid var(--line);margin-top:74px;padding:48px 0 34px;
 </div></section>
 
 <section class="band" id="platform"><div class="wrap">
-  <div class="sectop">
+  <div class="sectop w">
     <span class="eyebrow">Atlan Registry</span>
     <h2>The full platform for everything your agents install.</h2>
-    <p>Four capabilities over one inventory of every skill, MCP, plugin and sub-agent your teams run.</p>
+    <p class="wide">Four capabilities over one inventory of every skill, MCP, plugin and sub-agent.</p>
   </div>
   <div style="margin-top:30px">
     <div class="tabs">
       <button class="tab on" data-tab="scan">Atlan Scan</button><button class="tab" data-tab="control">Atlan Control</button><button class="tab" data-tab="defend">Atlan Defend</button><button class="tab" data-tab="marketplace">Atlan Marketplace</button>
     </div>
-    <p class="td" data-panel="scan" style="margin-top:22px;max-width:48em"><b>Vets what agents install</b> — skills, MCPs, plugins and sub-agents read line by line before they install.</p><p class="td" data-panel="control" hidden style="margin-top:22px;max-width:48em"><b>Governs the agent fleet</b> — every agent found, sanctioned or shadow, held to policy on config, identity and permissions.</p><p class="td" data-panel="defend" hidden style="margin-top:22px;max-width:48em"><b>Secures every action the agent takes</b> — detect, respond and protect while the run is happening, not in the post-mortem.</p><p class="td" data-panel="marketplace" hidden style="margin-top:22px;max-width:48em"><b>Supplies what agents install</b> — one trusted shelf of vetted external and certified internal add-ons, each with an owner and a version.</p>
-    <div class="mock" data-panel="scan"><div class="bar"><i></i><i></i><i></i></div><div class="in"><div class="mrow"><span class="nm">data-sync</span><span class="sp pill critical">critical</span></div>
-      <div class="mrow"><span class="nm">deploy-helper</span><span class="sp pill critical">critical</span></div>
-      <div class="mrow"><span class="nm">ui-design</span><span class="sp pill high">high</span></div>
-      <div class="mrow"><span class="nm">changelog</span><span class="sp pill none">cleared</span></div>
-      <div class="mrow"><span class="nm">pr-review</span><span class="sp pill none">cleared</span></div>
-      <div class="mrow"><span class="nm faint">render.bin</span><span class="sp pill medium">unreadable</span></div></div></div><div class="mock" data-panel="control" hidden><div class="bar"><i></i><i></i><i></i></div><div class="in"><svg class="fleet" viewBox="0 0 640 236" role="img" aria-label="One person, the agents running under their identity, and what each one can reach">
-      <defs><marker id="a1" markerWidth="6" markerHeight="6" refX="5.4" refY="3" orient="auto">
-        <path d="M0 0 L6 3 L0 6 z" fill="#BFC0D8"/></marker>
-        <marker id="a2" markerWidth="6" markerHeight="6" refX="5.4" refY="3" orient="auto">
-        <path d="M0 0 L6 3 L0 6 z" fill="#D01B49"/></marker></defs>
-
-      <text class="ch" x="16" y="20">PERSON</text>
-      <text class="ch" x="212" y="20">AGENTS RUNNING AS THEM</text>
-      <text class="ch" x="486" y="20">CAN REACH</text>
-      <line class="rule" x1="0" y1="30" x2="640" y2="30"/>
-
-      <path d="M170 118 C 192 118, 192 66, 212 66" fill="none" class="w" marker-end="url(#a1)"/>
-      <path d="M170 118 C 192 118, 192 118, 212 118" fill="none" class="w" marker-end="url(#a1)"/>
-      <path d="M170 118 C 192 118, 192 170, 212 170" fill="none" class="w" marker-end="url(#a1)"/>
-      <path d="M446 66 C 466 66, 466 62, 486 62" fill="none" class="w bad" marker-end="url(#a2)"/>
-      <path d="M446 118 C 466 118, 466 114, 486 114" fill="none" class="w" marker-end="url(#a1)"/>
-      <path d="M446 170 C 466 170, 466 166, 486 166" fill="none" class="w" marker-end="url(#a1)"/>
-
-      <g><rect class="box" x="16" y="94" width="154" height="48"/>
-        <text class="nm" x="32" y="116">sarah@acme.io</text><text class="sub" x="32" y="132">identity root</text></g>
-
-      <g><rect class="box" x="212" y="44" width="234" height="44"/>
-        <text class="nm" x="228" y="64">Claude Code</text><text class="sub" x="228" y="79">auto mode · high autonomy</text>
-        <rect class="tag crit" x="368" y="56" width="62" height="19" rx="4"/>
-        <text class="tagt crit" x="399" y="69">2 critical</text></g>
-
-      <g><rect class="box" x="212" y="96" width="234" height="44"/>
-        <text class="nm" x="228" y="116">Cursor</text><text class="sub" x="228" y="131">sanctioned · policy applied</text>
-        <rect class="tag ok" x="380" y="108" width="50" height="19" rx="4"/>
-        <text class="tagt ok" x="405" y="121">on policy</text></g>
-
-      <g><rect class="box shadow" x="212" y="148" width="234" height="44"/>
-        <text class="nm" x="228" y="168">unnamed agent</text><text class="sub" x="228" y="183">shadow · found this morning</text>
-        <rect class="tag warn" x="374" y="160" width="56" height="19" rx="4"/>
-        <text class="tagt warn" x="402" y="173">unknown</text></g>
-
-      <g><rect class="leaf" x="486" y="44" width="138" height="36"/><text class="nm" x="500" y="66">prod database</text></g>
-      <g><rect class="leaf" x="486" y="96" width="138" height="36"/><text class="nm" x="500" y="118">customer records</text></g>
-      <g><rect class="leaf" x="486" y="148" width="138" height="36"/><text class="nm" x="500" y="170">source repos</text></g>
-    </svg></div></div><div class="mock" data-panel="defend" hidden><div class="bar"><i></i><i></i><i></i></div><div class="in"><div class="flow">
+    <p class="td" data-panel="scan" style="margin-top:22px;max-width:66em"><b>Vets what agents install</b> — skills, MCPs, plugins and sub-agents read line by line before they install.</p><p class="td" data-panel="control" hidden style="margin-top:22px;max-width:66em"><b>Governs the agent fleet</b> — every agent found, sanctioned or shadow, held to one policy.</p><p class="td" data-panel="defend" hidden style="margin-top:22px;max-width:66em"><b>Secures every action the agent takes</b> — detect, respond and protect while the run happens, not in the post-mortem.</p><p class="td" data-panel="marketplace" hidden style="margin-top:22px;max-width:66em"><b>Supplies what agents install</b> — one trusted shelf of vetted add-ons, each with an owner and a version.</p>
+    <div class="mock" data-panel="scan"><div class="bar"><i></i><i></i><i></i></div><div class="in"><div class="scanp">
+      <div class="hd"><span>SKILL</span><span>WHAT THE SCAN FOUND</span><span class="r">RESULT</span></div>
+      <div class="rw"><span class="nm">data-sync</span><span class="d">reads <code>~/.aws/credentials</code>, then posts out</span><span class="pill critical">critical</span></div>
+      <div class="rw"><span class="nm">deploy-helper</span><span class="d"><code>curl | bash</code> in the setup steps</span><span class="pill critical">critical</span></div>
+      <div class="rw"><span class="nm">ui-design</span><span class="d">instruction hidden in an HTML comment</span><span class="pill high">high</span></div>
+      <div class="rw"><span class="nm">invoice-parse</span><span class="d">competes with <code>invoice-extract</code> for the same prompts</span><span class="pill low">low</span></div>
+      <div class="rw"><span class="nm">changelog</span><span class="d faint">nothing flagged across 45 checks</span><span class="pill none">cleared</span></div>
+      <div class="rw"><span class="nm faint">render.bin</span><span class="d faint">binary — we could not read it</span><span class="pill medium">unreadable</span></div>
+    </div></div></div><div class="mock" data-panel="control" hidden><div class="bar"><i></i><i></i><i></i></div><div class="in"><div class="scanp ctl">
+      <div class="hd"><span>AGENT</span><span>IDENTITY, SCOPE AND POLICY</span><span class="r">STATUS</span></div>
+      <div class="rw"><span class="nm">Claude Code</span><span class="d">runs as <code>sarah@acme.io</code>, auto mode, reaches prod</span><span class="pill critical">off policy</span></div>
+      <div class="rw"><span class="nm">Cursor</span><span class="d">sanctioned, policy applied across 12 seats</span><span class="pill none">on policy</span></div>
+      <div class="rw"><span class="nm">unnamed agent</span><span class="d">shadow — found on a laptop this morning</span><span class="pill medium">unknown</span></div>
+      <div class="rw"><span class="nm">n8n workflow</span><span class="d">service account, no human owner</span><span class="pill high">no owner</span></div>
+      <div class="rw"><span class="nm">Copilot</span><span class="d faint">read-only scope, no write tools</span><span class="pill none">on policy</span></div>
+    </div></div></div><div class="mock" data-panel="defend" hidden><div class="bar"><i></i><i></i><i></i></div><div class="in"><div class="flow">
+      <div class="fhd"><span>TIME</span><span class="g">ACTION THE AGENT TOOK</span><span>RESULT</span></div>
       <div class="fr"><span class="t">14:18:02</span><span class="a">Read <code>~/profile.yaml</code></span><span class="p ok">allowed</span></div>
       <div class="fr"><span class="t">14:18:04</span><span class="a">Query <code>accounts</code> — 50 rows</span><span class="p ok">allowed</span></div>
       <div class="fr bad"><span class="t">14:18:09</span><span class="a">Email <code>accounts.csv</code> → personal address</span><span class="p no">blocked</span></div>
@@ -616,7 +604,7 @@ footer.bot{border-top:1px solid var(--line);margin-top:74px;padding:48px 0 34px;
 <section class="band"><div class="wrap">
   <div class="sectop" id="faq"><span class="eyebrow">Questions</span><h2>The ones worth asking.</h2></div>
   <div class="faq">
-    <details open><summary>What does it actually read?</summary><p>Every file in the folder — the SKILL.md, its frontmatter, reference files, scripts, and anything sitting beside them. 45 named checks across 8 categories.</p></details><details><summary>Will two scans of the same folder match?</summary><p>Exactly. Pattern analysis, no model in the loop, and every check runs every time whether it fires or not. Re-scan next month and the diff is real.</p></details><details><summary>What do I pay for?</summary><p>Nothing, for skills — every finding, every quoted line, every fix. MCP servers, plugins, sub-agents and continuous monitoring ship with Atlan Registry.</p></details><details><summary>Why sign in to see the detail?</summary><p>So the scan is still there next week, and so re-running it means something. Counts and category results are visible before you do.</p></details><details><summary>Can a clean report be wrong?</summary><p>Yes — and we would rather say so than sell you a tick. A payload can be encoded, fetched at run time, or parked where reviewers do not look. That is why unreadable files are reported as findings.</p></details><details><summary>What happens to my skills afterwards?</summary><p>Nothing. Files are read in memory and dropped. What persists is the finding list, counts, a SHA-256 per skill, and the one line each finding quotes.</p></details>
+    <details open><summary>What does it actually read?</summary><p>Every file in the folder — the SKILL.md, its frontmatter, reference files, scripts, and anything sitting beside them. 45 named checks across 8 categories.</p></details><details><summary>Will two scans of the same folder match?</summary><p>Exactly. Pattern analysis, no model in the loop, and every check runs whether it fires or not. Re-scan next month and the diff is real.</p></details><details><summary>What do I pay for?</summary><p>Nothing, for skills — every finding, every quoted line, every fix. MCPs, plugins, sub-agents and continuous monitoring ship with Atlan Registry.</p></details><details><summary>Why sign in to see the detail?</summary><p>So the scan is still there next week, and so re-running it means something. Counts and category results are visible before you do.</p></details><details><summary>Can a clean report be wrong?</summary><p>Yes. A payload can be encoded, fetched at run time, or parked where reviewers do not look — which is why unreadable files are reported as findings.</p></details><details><summary>What happens to my skills afterwards?</summary><p>Nothing. Files are read in memory and dropped. What persists is the finding list, counts, a SHA-256 per skill, and each quoted line.</p></details>
   </div>
   <p class="faqfoot">Something not here? The scanner is the answer to most of it — <a href="/scan">run one</a> and see what comes back.</p>
 </div></section>

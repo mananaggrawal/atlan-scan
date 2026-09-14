@@ -3,64 +3,36 @@ import { page, type User } from "../layout.ts";
 const PILLARS = [
   { id: "scan", tab: "Atlan Scan", lead: "Vets what agents install",
     body: "skills, MCPs, plugins and sub-agents read line by line before they install.",
-    mock: `<div class="mrow"><span class="nm">data-sync</span><span class="sp pill critical">critical</span></div>
-      <div class="mrow"><span class="nm">deploy-helper</span><span class="sp pill critical">critical</span></div>
-      <div class="mrow"><span class="nm">ui-design</span><span class="sp pill high">high</span></div>
-      <div class="mrow"><span class="nm">changelog</span><span class="sp pill none">cleared</span></div>
-      <div class="mrow"><span class="nm">pr-review</span><span class="sp pill none">cleared</span></div>
-      <div class="mrow"><span class="nm faint">render.bin</span><span class="sp pill medium">unreadable</span></div>` },
+    mock: `<div class="scanp">
+      <div class="hd"><span>SKILL</span><span>WHAT THE SCAN FOUND</span><span class="r">RESULT</span></div>
+      <div class="rw"><span class="nm">data-sync</span><span class="d">reads <code>~/.aws/credentials</code>, then posts out</span><span class="pill critical">critical</span></div>
+      <div class="rw"><span class="nm">deploy-helper</span><span class="d"><code>curl | bash</code> in the setup steps</span><span class="pill critical">critical</span></div>
+      <div class="rw"><span class="nm">ui-design</span><span class="d">instruction hidden in an HTML comment</span><span class="pill high">high</span></div>
+      <div class="rw"><span class="nm">invoice-parse</span><span class="d">competes with <code>invoice-extract</code> for the same prompts</span><span class="pill low">low</span></div>
+      <div class="rw"><span class="nm">changelog</span><span class="d faint">nothing flagged across 45 checks</span><span class="pill none">cleared</span></div>
+      <div class="rw"><span class="nm faint">render.bin</span><span class="d faint">binary — we could not read it</span><span class="pill medium">unreadable</span></div>
+    </div>` },
   { id: "control", tab: "Atlan Control", lead: "Governs the agent fleet",
-    body: "every agent found, sanctioned or shadow, held to policy on config, identity and permissions.",
-    mock: `<svg class="fleet" viewBox="0 0 640 236" role="img" aria-label="One person, the agents running under their identity, and what each one can reach">
-      <defs><marker id="a1" markerWidth="6" markerHeight="6" refX="5.4" refY="3" orient="auto">
-        <path d="M0 0 L6 3 L0 6 z" fill="#BFC0D8"/></marker>
-        <marker id="a2" markerWidth="6" markerHeight="6" refX="5.4" refY="3" orient="auto">
-        <path d="M0 0 L6 3 L0 6 z" fill="#D01B49"/></marker></defs>
-
-      <text class="ch" x="16" y="20">PERSON</text>
-      <text class="ch" x="212" y="20">AGENTS RUNNING AS THEM</text>
-      <text class="ch" x="486" y="20">CAN REACH</text>
-      <line class="rule" x1="0" y1="30" x2="640" y2="30"/>
-
-      <path d="M170 118 C 192 118, 192 66, 212 66" fill="none" class="w" marker-end="url(#a1)"/>
-      <path d="M170 118 C 192 118, 192 118, 212 118" fill="none" class="w" marker-end="url(#a1)"/>
-      <path d="M170 118 C 192 118, 192 170, 212 170" fill="none" class="w" marker-end="url(#a1)"/>
-      <path d="M446 66 C 466 66, 466 62, 486 62" fill="none" class="w bad" marker-end="url(#a2)"/>
-      <path d="M446 118 C 466 118, 466 114, 486 114" fill="none" class="w" marker-end="url(#a1)"/>
-      <path d="M446 170 C 466 170, 466 166, 486 166" fill="none" class="w" marker-end="url(#a1)"/>
-
-      <g><rect class="box" x="16" y="94" width="154" height="48"/>
-        <text class="nm" x="32" y="116">sarah@acme.io</text><text class="sub" x="32" y="132">identity root</text></g>
-
-      <g><rect class="box" x="212" y="44" width="234" height="44"/>
-        <text class="nm" x="228" y="64">Claude Code</text><text class="sub" x="228" y="79">auto mode · high autonomy</text>
-        <rect class="tag crit" x="368" y="56" width="62" height="19" rx="4"/>
-        <text class="tagt crit" x="399" y="69">2 critical</text></g>
-
-      <g><rect class="box" x="212" y="96" width="234" height="44"/>
-        <text class="nm" x="228" y="116">Cursor</text><text class="sub" x="228" y="131">sanctioned · policy applied</text>
-        <rect class="tag ok" x="380" y="108" width="50" height="19" rx="4"/>
-        <text class="tagt ok" x="405" y="121">on policy</text></g>
-
-      <g><rect class="box shadow" x="212" y="148" width="234" height="44"/>
-        <text class="nm" x="228" y="168">unnamed agent</text><text class="sub" x="228" y="183">shadow · found this morning</text>
-        <rect class="tag warn" x="374" y="160" width="56" height="19" rx="4"/>
-        <text class="tagt warn" x="402" y="173">unknown</text></g>
-
-      <g><rect class="leaf" x="486" y="44" width="138" height="36"/><text class="nm" x="500" y="66">prod database</text></g>
-      <g><rect class="leaf" x="486" y="96" width="138" height="36"/><text class="nm" x="500" y="118">customer records</text></g>
-      <g><rect class="leaf" x="486" y="148" width="138" height="36"/><text class="nm" x="500" y="170">source repos</text></g>
-    </svg>` },
+    body: "every agent found, sanctioned or shadow, held to one policy.",
+    mock: `<div class="scanp ctl">
+      <div class="hd"><span>AGENT</span><span>IDENTITY, SCOPE AND POLICY</span><span class="r">STATUS</span></div>
+      <div class="rw"><span class="nm">Claude Code</span><span class="d">runs as <code>sarah@acme.io</code>, auto mode, reaches prod</span><span class="pill critical">off policy</span></div>
+      <div class="rw"><span class="nm">Cursor</span><span class="d">sanctioned, policy applied across 12 seats</span><span class="pill none">on policy</span></div>
+      <div class="rw"><span class="nm">unnamed agent</span><span class="d">shadow — found on a laptop this morning</span><span class="pill medium">unknown</span></div>
+      <div class="rw"><span class="nm">n8n workflow</span><span class="d">service account, no human owner</span><span class="pill high">no owner</span></div>
+      <div class="rw"><span class="nm">Copilot</span><span class="d faint">read-only scope, no write tools</span><span class="pill none">on policy</span></div>
+    </div>` },
   { id: "defend", tab: "Atlan Defend", lead: "Secures every action the agent takes",
-    body: "detect, respond and protect while the run is happening, not in the post-mortem.",
+    body: "detect, respond and protect while the run happens, not in the post-mortem.",
     mock: `<div class="flow">
+      <div class="fhd"><span>TIME</span><span class="g">ACTION THE AGENT TOOK</span><span>RESULT</span></div>
       <div class="fr"><span class="t">14:18:02</span><span class="a">Read <code>~/profile.yaml</code></span><span class="p ok">allowed</span></div>
       <div class="fr"><span class="t">14:18:04</span><span class="a">Query <code>accounts</code> — 50 rows</span><span class="p ok">allowed</span></div>
       <div class="fr bad"><span class="t">14:18:09</span><span class="a">Email <code>accounts.csv</code> → personal address</span><span class="p no">blocked</span></div>
       <div class="fnote">Customer data leaving for an address outside the org. Stopped mid-run, before the send.</div>
     </div>` },
   { id: "marketplace", tab: "Atlan Marketplace", lead: "Supplies what agents install",
-    body: "one trusted shelf of vetted external and certified internal add-ons, each with an owner and a version.",
+    body: "one trusted shelf of vetted add-ons, each with an owner and a version.",
     mock: `<div class="shelf">
       <div class="sc"><span class="k">skill</span><b>brainstorming</b><span class="v">v2.1 · design team</span><span class="badge ok">certified</span></div>
       <div class="sc"><span class="k">mcp</span><b>slack</b><span class="v">v3.0 · external</span><span class="badge ok">vetted</span></div>
@@ -80,15 +52,15 @@ const FAQ = [
   { q: "What does it actually read?",
     a: "Every file in the folder — the SKILL.md, its frontmatter, reference files, scripts, and anything sitting beside them. 45 named checks across 8 categories." },
   { q: "Will two scans of the same folder match?",
-    a: "Exactly. Pattern analysis, no model in the loop, and every check runs every time whether it fires or not. Re-scan next month and the diff is real." },
+    a: "Exactly. Pattern analysis, no model in the loop, and every check runs whether it fires or not. Re-scan next month and the diff is real." },
   { q: "What do I pay for?",
-    a: "Nothing, for skills \u2014 every finding, every quoted line, every fix. MCP servers, plugins, sub-agents and continuous monitoring ship with Atlan Registry." },
+    a: "Nothing, for skills \u2014 every finding, every quoted line, every fix. MCPs, plugins, sub-agents and continuous monitoring ship with Atlan Registry." },
   { q: "Why sign in to see the detail?",
     a: "So the scan is still there next week, and so re-running it means something. Counts and category results are visible before you do." },
   { q: "Can a clean report be wrong?",
-    a: "Yes — and we would rather say so than sell you a tick. A payload can be encoded, fetched at run time, or parked where reviewers do not look. That is why unreadable files are reported as findings." },
+    a: "Yes. A payload can be encoded, fetched at run time, or parked where reviewers do not look — which is why unreadable files are reported as findings." },
   { q: "What happens to my skills afterwards?",
-    a: "Nothing. Files are read in memory and dropped. What persists is the finding list, counts, a SHA-256 per skill, and the one line each finding quotes." },
+    a: "Nothing. Files are read in memory and dropped. What persists is the finding list, counts, a SHA-256 per skill, and each quoted line." },
 ];
 
 const SCRIPT = `
@@ -154,17 +126,17 @@ export function landingPage(user: User | null): string {
 </div></section>
 
 <section class="band" id="platform"><div class="wrap">
-  <div class="sectop">
+  <div class="sectop w">
     <span class="eyebrow">Atlan Registry</span>
     <h2>The full platform for everything your agents install.</h2>
-    <p>Four capabilities over one inventory of every skill, MCP, plugin and sub-agent your teams run.</p>
+    <p class="wide">Four capabilities over one inventory of every skill, MCP, plugin and sub-agent.</p>
   </div>
   <div style="margin-top:30px">
     <div class="tabs">
       ${PILLARS.map((p) => `<button class="tab${p.id === "scan" ? " on" : ""}" data-tab="${p.id}">${p.tab}</button>`).join("")}
     </div>
     ${PILLARS.map(
-      (p) => `<p class="td" data-panel="${p.id}"${p.id === "scan" ? "" : " hidden"} style="margin-top:22px;max-width:48em"><b>${p.lead}</b> — ${p.body}</p>`,
+      (p) => `<p class="td" data-panel="${p.id}"${p.id === "scan" ? "" : " hidden"} style="margin-top:22px;max-width:66em"><b>${p.lead}</b> — ${p.body}</p>`,
     ).join("")}
     ${PILLARS.map(
       (p) => `<div class="mock" data-panel="${p.id}"${p.id === "scan" ? "" : " hidden"}><div class="bar"><i></i><i></i><i></i></div><div class="in">${p.mock}</div></div>`,
