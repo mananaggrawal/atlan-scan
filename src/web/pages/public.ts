@@ -40,7 +40,7 @@ export function sharePanel(runId: string, base: string): string {
 
 export function publicBanner(isSample = false): string {
   const text = isSample
-    ? `An example report. The library was built to fail — every finding below is real output.`
+    ? `An example report — every finding below is real output.`
     : `A report is only true for the moment it ran. Skills change.`;
   const cta = "Scan your own skills";
   return `<div class="card" style="padding:18px 22px;margin:22px 0 0;border-color:var(--blue-line);background:var(--blue-soft)">
