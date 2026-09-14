@@ -37,6 +37,7 @@ export interface ScanInput {
 }
 
 export function runScan({ files, source }: ScanInput, review?: ReviewSummary): ScanResult {
+  // eslint-disable-next-line prefer-const -- reassigned when duplicates are removed below
   const tree = parseTree(files);
   const findings: Finding[] = [];
 
@@ -112,6 +113,16 @@ export function runScan({ files, source }: ScanInput, review?: ReviewSummary): S
       checks,
     };
   });
+
+  // The reviewer audits provenance too, because the skill it runs from has to be a
+  // complete audit on its own — someone running it in Claude Code has no engine
+  // beside them. Inside the scanner the engine has usually said it first, so the
+  // duplicate is dropped here rather than by narrowing what the reviewer looks at.
+  if (review?.findings.length) {
+    const engineSaidIt = new Set(findings.map((f) => `${f.skill}|${f.categoryId}|${f.line ?? "-"}`));
+    const kept = review.findings.filter((f) => !engineSaidIt.has(`${f.skill}|${f.categoryId}|${f.line ?? "-"}`));
+    review = { ...review, duplicates: review.findings.length - kept.length, findings: kept };
+  }
 
   const bySeverity = { critical: 0, high: 0, medium: 0, low: 0, info: 0 } as Record<Severity, number>;
   for (const f of findings) bySeverity[f.severity]++;

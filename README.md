@@ -45,6 +45,7 @@ construction, and two scans of the same library are directly comparable.
 
 ```
 src/engine/          the scanner — no I/O, no network, pure functions
+  review/            the semantic pass: prompt (loaded from skills/), client, verifier
   catalog.ts         the fixed skeleton: 50 checks with names and descriptions
   types.ts           categories, severities, the Finding shape
   parse.ts           decoding, frontmatter, skill-tree building, command-line gating
@@ -134,6 +135,19 @@ The 50 checks read the text. They cannot read intent — a step phrased as routi
 bookkeeping that copies board figures somewhere else, or a line telling the agent
 not to mention what it just did. So with `ANTHROPIC_API_KEY` set, each skill is
 also shown to a model as **data** and asked what it would make an agent do.
+
+The reviewer's instructions are not in the server. They are
+[`skills/skill-audit/SKILL.md`](skills/skill-audit/SKILL.md) — a skill like any
+other, which the server loads at boot and sends as the system prompt. One copy,
+three consequences: what the hosted scanner asks the model is exactly what you
+can read in the repo; anyone can run the same audit locally in Claude Code with
+no server at all; and Atlan Scan can scan its own auditor, which a test makes it
+do on every run.
+
+Because that skill has to stand on its own, it audits provenance too — version,
+owner, licence, declared tools — even though the engine covers the same ground.
+Where both say the same thing about the same line, the duplicate is dropped at
+merge time rather than by narrowing what the reviewer is allowed to look at.
 
 Two properties make this safe to ship in a security tool:
 

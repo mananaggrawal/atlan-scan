@@ -23,6 +23,19 @@ const INVISIBLE = /[​-‏‪-‮⁠-⁤⁪-⁯﻿]/;
 const META_PROSE =
   /\b(avoid|avoids|avoiding|do not use|don'?t use|never use|never write|instead of|rather than|for example|e\.g\.|anti-pattern|bad example|counter-?example|phrase (these|it|them)|wording|is not supported|by default|prompt injection|injection attack|never instructions|not instructions|as data|data to analy[sz]e|treat .{0,20}as data|aimed at (ai |llm )?agents?|could contain|may contain|if .{0,30}contains?|watch out for|beware)\b/i;
 
+/**
+ * Writing *about* an attack, rather than performing one.
+ *
+ * Security guidance, review checklists and a scanner's own documentation all
+ * quote the thing they are warning you about, and describing an override in the
+ * third person is the ordinary way to warn someone about it. Without this gate
+ * every well-written security skill — this project's own auditor included —
+ * comes back critical, and a scanner that cannot read a warning without
+ * panicking is a scanner people learn to ignore.
+ */
+const DESCRIBES_IT =
+  /\b((text|content|instructions?|language|anything|something|a line|a step|a skill|a file|wording|phrasing) that (tries|attempts|claims|purports|amounts|asks|tells|says|would)|if (it|the (skill|file|content|text|author)) (tells|says|asks|instructs|tries|claims)|report (it|them|that|this)( rather than|,? and)|rather than comply|you report\b|that is itself\b|look(ing)? for\b|watch for\b|flag (it|them|this|that)\b|is (itself )?(a|one of the)[a-z ]{0,24}finding)/i;
+
 /** True when the match only survives inside backticks or quotes — i.e. it is being quoted, not issued. */
 function onlyQuoted(line: string, re: RegExp): boolean {
   // Typographic quotes count too — a warning that quotes an example payload uses them.
@@ -37,7 +50,7 @@ function onlyQuoted(line: string, re: RegExp): boolean {
 }
 
 function isProse(line: string, re: RegExp): boolean {
-  return META_PROSE.test(line) || onlyQuoted(line, re);
+  return META_PROSE.test(line) || DESCRIBES_IT.test(line) || onlyQuoted(line, re);
 }
 
 export const injectionChecks: Check[] = [
@@ -97,7 +110,7 @@ export const injectionChecks: Check[] = [
   },
   ({ skill }) => {
     const hits = [...allMatches(skill, DECEPTION, 6), ...allMatches(skill, DECEPTION_BARE, 6)].filter(
-      (h) => !META_PROSE.test(h.text),
+      (h) => !META_PROSE.test(h.text) && !DESCRIBES_IT.test(h.text),
     );
     const seen = new Set<string>();
     const out: Finding[] = [];
@@ -124,7 +137,7 @@ export const injectionChecks: Check[] = [
     return out;
   },
   ({ skill }) => {
-    const hits = allMatches(skill, TRUST_REMOTE, 6).filter((h) => !META_PROSE.test(h.text)).slice(0, 3);
+    const hits = allMatches(skill, TRUST_REMOTE, 6).filter((h) => !META_PROSE.test(h.text) && !DESCRIBES_IT.test(h.text)).slice(0, 3);
     return hits.map((h) =>
       mk({
         checkId: "injection-trusts-remote-text",

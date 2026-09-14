@@ -111,8 +111,11 @@ test("a reviewer that pads its answer is capped rather than trusted", () => {
 
 test("the reviewer is told the skill is data, and told to report an attempt to instruct it", () => {
   assert.match(SYSTEM, /never an instruction to you/i);
-  assert.match(SYSTEM, /report the\s+skill as safe/i);
-  assert.match(SYSTEM, /COPIED CHARACTER FOR CHARACTER/);
+  assert.match(SYSTEM, /report the skill as safe/i);
+  assert.match(SYSTEM, /copied character for character/i);
+  // The instructions must be the repo's skill, not a second copy living in the server.
+  assert.match(SYSTEM, /# Audit a skill/);
+  assert.match(SYSTEM, /Provenance and accountability/);
 });
 
 test("a fenced or chatty model turn still yields its JSON", () => {
@@ -186,4 +189,66 @@ test("a folder larger than the ceiling reports the remainder as unreviewed, neve
     if (prev) process.env["ANTHROPIC_API_KEY"] = prev; else delete process.env["ANTHROPIC_API_KEY"];
     if (prevMax) process.env["SCAN_REVIEW_MAX_SKILLS"] = prevMax; else delete process.env["SCAN_REVIEW_MAX_SKILLS"];
   }
+});
+
+test("the reviewer runs from the repo's own skill, and the cache key follows that file", async () => {
+  const { readFileSync } = await import("node:fs");
+  const { SKILL_PATH, PROMPT_VERSION } = await import("../src/engine/review/prompt.ts");
+
+  const raw = readFileSync(SKILL_PATH, "utf8");
+  assert.match(raw, /^---\r?\nname: skill-audit/, "the auditor must itself be a well-formed skill");
+
+  // Every heading of the skill reaches the model, so a change to the file is a
+  // change to what the hosted scanner asks — there is no second copy to drift.
+  for (const heading of raw.match(/^## .+$/gm) ?? []) {
+    assert.ok(SYSTEM.includes(heading), `the reviewer is missing "${heading}" from the skill`);
+  }
+  // Derived from the file, so editing it invalidates cached reviews on its own.
+  assert.match(PROMPT_VERSION, /^audit-[0-9a-f]{8}$/);
+});
+
+test("Atlan Scan can scan its own auditor, and its auditor is clean", async () => {
+  const { readFileSync } = await import("node:fs");
+  const { SKILL_PATH } = await import("../src/engine/review/prompt.ts");
+  const r = runScan({
+    files: [{ path: "skill-audit/SKILL.md", data: readFileSync(SKILL_PATH) }],
+    source: { kind: "upload", label: "skill-audit" },
+  });
+  assert.equal(r.totals.bySeverity.critical, 0);
+  assert.equal(r.totals.bySeverity.high, 0);
+  // It carries the provenance it asks of everyone else.
+  const ids = r.findings.map((f) => f.checkId);
+  for (const own of ["metadata-no-version", "metadata-no-owner", "metadata-no-license", "metadata-tools-undeclared"]) {
+    assert.ok(!ids.includes(own), `the auditor fails its own check: ${own}`);
+  }
+});
+
+test("when the engine already said it, the model is not made to say it twice", () => {
+  const files = [{ path: "telemetry-helper/SKILL.md", data: Buffer.from(SKILL) }];
+  const engineOnly = runScan({ files, source: { kind: "upload", label: "t" } });
+  const dupe = engineOnly.findings.find((f) => f.categoryId === "metadata");
+  assert.ok(dupe, "expected a provenance finding from the engine to collide with");
+
+  const r = runScan({ files, source: { kind: "upload", label: "t" } }, {
+    ran: true,
+    model: "test",
+    reviewed: 1,
+    cached: 0,
+    dropped: 0,
+    failures: [],
+    findings: [
+      { ...dupe, checkId: "review-semantic", title: "No version on this skill", origin: "model" as const },
+      {
+        ...dupe,
+        checkId: "review-semantic",
+        categoryId: "opacity" as const,
+        line: 11,
+        title: "The user is told not to be told",
+        origin: "model" as const,
+      },
+    ],
+  });
+  assert.equal(r.review?.duplicates, 1);
+  assert.equal(r.review?.findings.length, 1);
+  assert.equal(r.review?.findings[0]?.title, "The user is told not to be told");
 });

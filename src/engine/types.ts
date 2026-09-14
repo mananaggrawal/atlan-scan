@@ -212,6 +212,8 @@ export interface ReviewSummary {
   cached: number;
   /** Claims the model made that could not be verified against the file, and were dropped. */
   dropped: number;
+  /** Findings the engine had already reported on the same skill, category and line. */
+  duplicates?: number;
   failures: { skill: string; reason: string }[];
   findings: Finding[];
 }
