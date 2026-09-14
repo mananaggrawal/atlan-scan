@@ -194,6 +194,8 @@ export interface ScanResult {
     findings: number;
     /** Images, fonts, archives — not text by design. */
     nonText: number;
+    /** OS leftovers (.DS_Store and friends) dropped before the scan. */
+    ignored: number;
     bySeverity: Record<Severity, number>;
   };
   library: LibraryStats;

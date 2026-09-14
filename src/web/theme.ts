@@ -147,10 +147,10 @@ input[type=text]:focus{outline:2px solid var(--blue);outline-offset:-1px;border-
 .f.medium{border-left-color:var(--med)}
 .f.low{border-left-color:var(--line)}
 .f.info{border-left-color:var(--line)}
-.f .fh{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
-.f .ft{font-family:var(--display);font-weight:600;font-size:16.5px;color:var(--ink-strong);letter-spacing:-.016em}
-.f .loc{font-family:var(--mono);font-size:11.5px;color:var(--muted);margin-left:auto}
-.quote{font-family:var(--mono);font-size:12.5px;line-height:1.6;background:var(--surface-2);border:1px solid var(--line-soft);border-radius:6px;padding:11px 13px;margin:12px 0;color:var(--ink-strong);overflow-x:auto;white-space:pre-wrap;word-break:break-word}
+.f .fh{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;min-width:0}
+.f .ft{font-family:var(--display);font-weight:600;font-size:16.5px;color:var(--ink-strong);letter-spacing:-.016em;flex:1 1 auto;min-width:0;overflow-wrap:anywhere}
+.f .loc{font-family:var(--mono);font-size:11.5px;color:var(--muted);flex:1 0 100%;margin:3px 0 0;overflow-wrap:anywhere}
+.quote{font-family:var(--mono);font-size:12.5px;line-height:1.6;background:var(--surface-2);border:1px solid var(--line-soft);border-radius:6px;padding:11px 13px;margin:12px 0;color:var(--ink-strong);max-width:100%;overflow-x:auto;white-space:pre-wrap;overflow-wrap:anywhere}
 .f .why{font-size:14px;color:var(--ink);line-height:1.55}
 .f .fix{font-size:13.5px;color:var(--ink);line-height:1.55;margin-top:9px;padding-left:13px;border-left:2px solid var(--cyan)}
 .f .fix b{font-family:var(--mono);font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:3px;font-weight:500}
@@ -175,7 +175,6 @@ footer.bot .disc{max-width:62em;line-height:1.6}
 @media (max-width:640px){
   .hero{padding:48px 0 40px}
   .gate{padding:22px}
-  .f .loc{margin-left:0;width:100%}
 }
 
 /* ---- AIR-shaped layout: type picker, result rail, category cards, locks ---- */
@@ -504,4 +503,51 @@ footer.bot{border-top:1px solid var(--line);margin-top:74px;padding:48px 0 34px;
 .legal ul{margin:0 0 12px;padding-left:20px}
 .legal li{font-size:15px;color:var(--muted);line-height:1.68;margin-bottom:7px}
 .legalfoot{font-size:13px;color:var(--faint);margin:26px 0 60px;padding-top:18px;border-top:1px solid var(--line-soft)}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Layout safety.
+
+   Every string on a report page is written by a model or copied out of somebody
+   else's file: a 90-character title with no spaces, a 400-character base64 blob,
+   a URL longer than the column. None of it may push the page sideways. The rules
+   below are deliberately blunt and deliberately last, so they win.
+
+   The two that actually matter: grid and flex children default to min-width:auto,
+   which means they refuse to shrink below their longest unbreakable word — that is
+   the cause of almost every "the layout broke" screenshot. And overflow-wrap:anywhere
+   is what lets that word break at all.
+   ───────────────────────────────────────────────────────────────────────────── */
+.cols > *{min-width:0}
+.card,.catcard,.catbody,.sub,.rail,.rail .rc{min-width:0}
+.f .why,.f .fix,.catbody .sub .sd,.cathead h3,.catbody .sub .st{overflow-wrap:anywhere;min-width:0}
+.rail .kv{align-items:baseline}
+.rail .kv span{flex:0 0 auto}
+.rail .kv b{text-align:right;overflow-wrap:anywhere;min-width:0}
+.pill,.astbadge,.status{flex:0 0 auto;white-space:nowrap}
+.wrap{overflow-x:clip}
+pre,code{max-width:100%;overflow-wrap:anywhere}
+table.tbl{display:block;max-width:100%;overflow-x:auto}
+
+/* The caveat strip: what this run did not cover. Renders only when there is something
+   to admit, and is the one thing on the page that must survive any amount of text. */
+.caveat{display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap;
+  background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--med);
+  border-radius:10px;padding:14px 18px;margin-top:18px}
+.caveat-k{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--muted);flex:0 0 auto;padding-top:3px}
+.caveat ul{margin:0;padding:0;list-style:none;flex:1 1 320px;min-width:0}
+.caveat li{font-size:13px;color:var(--ink);line-height:1.55;overflow-wrap:anywhere}
+.caveat li + li{margin-top:6px}
+.caveat-hard{border-left-color:var(--high);color:var(--ink);font-size:13.5px;line-height:1.6;display:block}
+
+/* Footer: one short link row rather than three columns of mostly-dead links. */
+.flinks{display:flex;flex-wrap:wrap;gap:10px 26px;align-items:flex-start}
+.flinks a{font-size:13.5px;color:var(--muted)}
+.flinks a:hover{color:var(--ink-strong)}
+/* Belt and braces on the heading: the label is clamped in the renderer too, but a
+   stored run from an older build must not be able to produce a wall of text. */
+.pagehead .ph h1{overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+/* Two children now, not four. Declared last so it beats the earlier four-column rules. */
+.fcols{grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:40px}
+@media (max-width:700px){.fcols{grid-template-columns:1fr;gap:24px}}
 `;

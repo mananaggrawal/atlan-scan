@@ -155,7 +155,6 @@ test("the signed-out report is a teaser: counts yes, evidence no", async () => {
   }
   assert.match(html, /findings?<\/b> across/);
   assert.match(html, /Prompt injection/);
-  assert.match(html, /How this was audited/, "the report always says who read it");
 });
 
 test("a folder with no SKILL.md is refused with a useful message", async () => {

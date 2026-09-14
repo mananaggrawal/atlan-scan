@@ -162,6 +162,7 @@ export function makeServer() {
         unreadable: incoming.unreadable ?? [],
         notFullyRead: incoming.notFullyRead ?? [],
         partial: incoming.partial ?? [],
+        totals: { ...incoming.totals, ignored: incoming.totals?.ignored ?? 0 },
         library: {
           listingChars: incoming.library?.listingChars ?? 0,
           budgetChars: incoming.library?.budgetChars ?? 1536,

@@ -89,6 +89,8 @@ export interface ParsedTree {
   nonTextCount: number;
   fileCount: number;
   orphanFiles: FileEntry[];
+  /** Operating-system leftovers dropped before anything looked at them. Counted, not hidden. */
+  ignored: number;
 }
 
 /** Formats nobody expects to be text. Excluded from "could not read" so that number means something. */
@@ -112,12 +114,31 @@ function dirOf(path: string): string {
   return i < 0 ? "" : path.slice(0, i);
 }
 
+/**
+ * Files the operating system left behind, which are not part of anybody's skill.
+ *
+ * Dropped here rather than in each caller: the CLI, the browser upload and the
+ * GitHub ingest each kept their own skip list and none of the three had .DS_Store,
+ * so a folder dragged in from Finder reported one more file than it contained and
+ * there was nothing on the page to explain the extra. One list, at the only point
+ * every path goes through.
+ *
+ * This is the only thing ever dropped silently, and only because it is not part of
+ * the skill. Anything the author wrote stays in, readable or not.
+ */
+const OS_JUNK = /(^|\/)(\.DS_Store|__MACOSX|Thumbs\.db|desktop\.ini|\.Spotlight-V100|\.Trashes|\.AppleDouble|\._[^/]*)(\/|$)/i;
+
 export function parseTree(files: RawFile[]): ParsedTree {
   const entries: FileEntry[] = [];
   const unreadable: Unreadable[] = [];
   let nonTextCount = 0;
+  let ignored = 0;
 
   for (const f of files) {
+    if (OS_JUNK.test(f.path)) {
+      ignored++;
+      continue;
+    }
     const { text, reason } = decode(f.data, f.path);
     const entry: FileEntry = {
       path: f.path,
@@ -159,7 +180,7 @@ export function parseTree(files: RawFile[]): ParsedTree {
   }
 
   const orphanFiles = entries.filter((e) => !claimed.has(e.path));
-  return { skills, unreadable, nonTextCount, fileCount: entries.length, orphanFiles };
+  return { skills, unreadable, nonTextCount, fileCount: entries.length, orphanFiles, ignored };
 }
 
 /** Find the 1-based line number of the first line matching a predicate. */

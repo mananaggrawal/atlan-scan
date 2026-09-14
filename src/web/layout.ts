@@ -1,4 +1,5 @@
 import { CSS } from "./theme.ts";
+import { ENGINE_VERSION } from "../engine/types.ts";
 
 export function esc(s: unknown): string {
   return String(s)
@@ -52,30 +53,16 @@ ${o.body}
       <a class="brand" href="/"><span class="sq"></span>Atlan <em>Scan</em></a>
       <p>Read what is actually in the skills, MCPs and plugins your agents install — before they run.</p>
     </div>
-    <div>
-      <h5>Product</h5>
-      <ul>
-        <li><a href="/scan">Scan a skill</a> <span class="flive">free</span></li>
-        <li><a href="/scan">Scan an MCP</a></li>
-        <li><a href="/scan">Scan a plugin</a></li>
-        <li><a href="/scan">Scan a sub-agent</a></li>
-      </ul>
-    </div>
-    <div>
-      <h5>Resources</h5>
-      <ul>
-        <li><a href="/#how">How it works</a></li>
-        <li><a href="/#platform">What gets checked</a></li>
-        <li><a href="/#faq">Questions</a></li>
-        <li><a href="/history">Your scans</a></li>
-        <li><a href="/privacy">Privacy</a></li>
-        <li><a href="/terms">Terms</a></li>
-      </ul>
-    </div>
+    <nav class="flinks">
+      <a href="/scan">Scan a skill</a>
+      <a href="/#how">How it works</a>
+      <a href="/privacy">Privacy</a>
+      <a href="/terms">Terms</a>
+    </nav>
   </div>
   <div class="fbot">
     <span>Atlan Scan — the free scanner in front of <a href="https://atlan.com" rel="noreferrer">Atlan</a> Agent Registry.</span>
-    <span class="sp"><span class="mono">engine scan-1.0.0</span></span>
+    <span class="sp"><span class="mono">engine ${esc(ENGINE_VERSION)}</span></span>
   </div>
 </div></footer>
 ${o.script ? `<script>${o.script}</script>` : ""}

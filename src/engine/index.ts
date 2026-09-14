@@ -103,6 +103,7 @@ export function assemble({ files, source }: ScanInput, audit: AuditReport): Scan
       files: tree.fileCount,
       findings: findings.length,
       nonText: tree.nonTextCount,
+      ignored: tree.ignored,
       bySeverity,
     },
     library: libraryFacts(tree.skills),

@@ -3,6 +3,25 @@ import type { CategoryResult, Finding, ScanResult, Severity } from "../../engine
 import { enterpriseModal, MODAL_SCRIPT } from "./modal.ts";
 import { publicBanner, sharePanel } from "./public.ts";
 
+/**
+ * Nothing on this page is allowed to be arbitrarily long.
+ *
+ * Titles, skill names, paths and the scan label all come from a model or from
+ * somebody's filesystem, and a 600-character one renders as eleven lines of
+ * heading before any CSS gets a say. Clamped here, at the last point before the
+ * markup, so it holds for runs that were stored before this rule existed.
+ */
+function short(s: string, n = 90): string {
+  const flat = String(s).replace(/\s+/g, " ").trim();
+  return flat.length <= n ? flat : `${flat.slice(0, n - 1).trimEnd()}…`;
+}
+
+/** Paths are clipped from the front: the filename is the part that identifies it. */
+function shortPath(s: string, n = 72): string {
+  const flat = String(s).trim();
+  return flat.length <= n ? flat : `…${flat.slice(flat.length - (n - 1))}`;
+}
+
 function plural(n: number, one: string, many = `${one}s`): string {
   return `${n.toLocaleString()} ${n === 1 ? one : many}`;
 }
@@ -10,7 +29,7 @@ function plural(n: number, one: string, many = `${one}s`): string {
 const GOOGLE_SVG = `<svg width="16" height="16" viewBox="0 0 48 48" aria-hidden="true"><path fill="#4285F4" d="M45 24c0-1.6-.1-2.7-.4-4H24v7.5h12c-.2 2-1.5 5-4.4 7l6.7 5.2C42.2 36 45 30.6 45 24z"/><path fill="#34A853" d="M24 46c5.9 0 10.9-2 14.5-5.3l-6.9-5.4C29.7 36.6 27.1 37.5 24 37.5c-5.8 0-10.7-3.9-12.5-9.2l-7.1 5.5C8 41.3 15.4 46 24 46z"/><path fill="#FBBC05" d="M11.5 28.3c-.5-1.4-.7-2.8-.7-4.3s.3-3 .7-4.3l-7.1-5.5C2.9 17.1 2 20.4 2 24s.9 6.9 2.4 9.8l7.1-5.5z"/><path fill="#EA4335" d="M24 10.5c4.1 0 6.9 1.8 8.5 3.3l6.2-6C34.9 4.3 29.9 2 24 2 15.4 2 8 6.7 4.4 14.2l7.1 5.5c1.8-5.3 6.7-9.2 12.5-9.2z"/></svg>`;
 
 function findingBlock(f: Finding): string {
-  const loc = f.line ? `${f.file}:${f.line}` : f.file;
+  const loc = f.line ? `${shortPath(f.file)}:${f.line}` : shortPath(f.file);
   return `<div class="card f ${f.severity}" style="margin-top:12px">
     <div class="fh"><span class="pill ${f.severity}">${f.severity}</span><span class="ft">${esc(f.title)}</span><span class="loc">${esc(loc)}</span></div>
     <div class="quote">${esc(f.evidence)}</div>
@@ -56,68 +75,57 @@ function categoryCard(c: CategoryResult, r: ScanResult, full: boolean): string {
 }
 
 /**
- * What the auditor was, and what it did not manage to read.
+ * The caveats, and only the caveats.
  *
- * Always rendered. A report that quietly omits this is claiming a completeness it
- * does not have — an unaudited skill, a clipped file and a clean skill look
- * identical unless the page says otherwise.
+ * There is no "how this was audited" explainer on the report — the landing page
+ * and the repo say how it works, and a reader looking at findings does not need
+ * it restated. What cannot be dropped is the list of things this run did NOT
+ * cover: an unaudited skill, a clipped file and a clean skill look identical
+ * unless the page says otherwise. So this renders when there is something to
+ * admit, and renders nothing at all when there is not.
+ *
+ * Counts are shown to everyone; which file or skill it was is detail, and detail
+ * sits behind the sign-in like the findings do.
  */
-function auditNote(r: ScanResult, full: boolean): string {
+function caveats(r: ScanResult, full: boolean): string {
   const a = r.audit;
 
   if (!a.ran) {
-    return `<div class="catcard"><div class="cathead"><h3>These skills were not audited</h3>
-      <span class="status flag high">no audit</span></div>
-      <div class="catbody"><p class="revnote">The audit is a model reading every file, and no model was available for this run.
-      Nothing below is a result. Set <code>ANTHROPIC_API_KEY</code> on the server, or run the
-      <code>skill-audit</code> skill yourself in Claude Code against this folder.</p></div></div>`;
+    return `<div class="caveat caveat-hard">
+      <b>These skills were not audited.</b> The audit is a model reading every file, and none was
+      available for this run. Nothing below is a result.
+    </div>`;
   }
 
-  const bits: string[] = [];
-  bits.push(`${plural(a.reviewed + a.cached, "skill")} audited by ${esc(a.model)}`);
-  if (a.dropped > 0) {
-    bits.push(`${plural(a.dropped, "claim")} discarded for quoting text that is not in the files`);
-  }
-
-  const problems: string[] = [];
-  // The count is shown to everyone; which file it was is detail, and detail is
-  // behind the sign-in like every other detail on this page.
-  const named = (parts: string[]): string => (full ? `: ${esc(parts.join("; "))}` : "");
+  const named = (parts: string[]): string => (full ? ` — ${esc(parts.join("; "))}` : "");
+  const lines: string[] = [];
 
   if (a.failures.length) {
-    problems.push(`<p class="revfail">${plural(a.failures.length, "skill")} could not be audited${named(
-      a.failures.map((f) => `${f.skill} (${f.reason})`),
-    )}. ${a.failures.length === 1 ? "It was" : "They were"} not counted as clear.</p>`);
+    lines.push(`${plural(a.failures.length, "skill")} could not be audited${named(
+      a.failures.map((x) => `${short(x.skill, 60)} (${short(x.reason, 80)})`),
+    )}. Not counted as clear.`);
   }
   if (r.partial.length) {
-    problems.push(`<p class="revfail">${plural(r.partial.length, "audit")} stopped early, at the model's output limit${named(
-      r.partial.map((x) => `${x.skill} (${plural(x.kept, "finding")} written before it stopped)`),
-    )}. What it had written is below; what it had not is missing, so ${
-      r.partial.length === 1 ? "that skill is" : "those skills are"
-    } not fully audited.</p>`);
+    lines.push(`${plural(r.partial.length, "audit")} stopped at the model's output limit${named(
+      r.partial.map((x) => `${short(x.skill, 60)}, after ${plural(x.kept, "finding")}`),
+    )}. What it had written is below; the rest was never written.`);
   }
   if (r.notFullyRead.length) {
-    problems.push(`<p class="revfail">${plural(r.notFullyRead.length, "file")} shown only in part${named(
-      r.notFullyRead.map((c) => `${c.path} (${c.shown.toLocaleString()} of ${c.of.toLocaleString()} chars)`),
-    )}. What was not shown was not audited.</p>`);
+    lines.push(`${plural(r.notFullyRead.length, "file")} shown only in part${named(
+      r.notFullyRead.map((x) => `${shortPath(x.path)} (${x.shown.toLocaleString()} of ${x.of.toLocaleString()} chars)`),
+    )}. What was not shown was not audited.`);
   }
   if (r.unreadable.length) {
-    problems.push(`<p class="revfail">${plural(r.unreadable.length, "file")} could not be read at all${named(
-      r.unreadable.map((u) => `${u.path} (${u.reason})`),
-    )}. An unreadable file is never a clear one.</p>`);
+    lines.push(`${plural(r.unreadable.length, "file")} could not be read at all${named(
+      r.unreadable.map((x) => `${shortPath(x.path)} (${short(x.reason, 60)})`),
+    )}. An unreadable file is never a clear one.`);
   }
 
-  return `<div class="catcard"><div class="cathead"><h3>How this was audited</h3>
-    ${problems.length ? `<span class="status flag low">${plural(problems.length, "caveat")}</span>` : `<span class="status clear">✓ read in full</span>`}</div>
-    <div class="catbody">
-      <p class="revnote">${esc(bits.join(" \u00b7 "))}. Every skill was handed to the model as data — SKILL.md and
-      every file beside it — with the <code>skill-audit</code> skill as its instructions. Each quote below was
-      then checked back against the file it names, and anything that did not match was dropped before you saw it.</p>
-      ${problems.join("")}
-      <p class="revnote">This does not tell you the skills are safe. It tells you what a careful reader
-      found in the text that ships. A payload can be encoded, fetched at run time, or parked in a file
-      nobody opens.</p>
-    </div></div>`;
+  if (!lines.length) return "";
+  return `<div class="caveat">
+    <span class="caveat-k">Not covered</span>
+    <ul>${lines.map((l) => `<li>${l}</li>`).join("")}</ul>
+  </div>`;
 }
 
 function rail(r: ScanResult, full: boolean, isPublic = false): string {
@@ -217,7 +225,7 @@ export function resultPage(r: ScanResult, user: User | null, opts: ResultOpts = 
   <div class="pagehead">
     <div class="ph">
       <span class="eyebrow">Scan results</span>
-      <h1 style="margin-top:10px">${esc(r.source.label)}</h1>
+      <h1 style="margin-top:10px">${esc(short(r.source.label, 80))}</h1>
       <p class="resultlede">${lede(r)}</p>
       <div class="chips">
         <span class="chip"><span class="lbl">Scanned at</span>${when} UTC</span>
@@ -228,10 +236,10 @@ export function resultPage(r: ScanResult, user: User | null, opts: ResultOpts = 
     </div>
   </div>
   ${sevRow(r)}
+  ${caveats(r, full)}
   ${opts.isPublic ? publicBanner(Boolean(opts.isSample)) : ""}
   <div class="cols" style="margin-top:26px">
     <div>
-      ${auditNote(r, full)}
       ${r.categories.map((c) => categoryCard(c, r, full)).join("")}
       ${opts.isOwner ? sharePanel(r.runId, opts.baseUrl ?? "") : ""}
       ${opts.isPublic ? "" : registryCta()}

@@ -5,6 +5,8 @@ import { libraryFacts, skillFacts, DESCRIPTION_BUDGET } from "../src/engine/fact
 import { assemble, runScan } from "../src/engine/index.ts";
 import { CATEGORIES, type Finding } from "../src/engine/types.ts";
 import type { AuditReport } from "../src/engine/review/index.ts";
+import { resultPage } from "../src/web/pages/result.ts";
+import { CSS } from "../src/web/theme.ts";
 
 /**
  * The engine no longer decides anything, so these are tests of measurement and
@@ -181,4 +183,40 @@ test("runScan: with no API key it returns an unaudited result rather than throwi
   } finally {
     if (had !== undefined) process.env["ANTHROPIC_API_KEY"] = had;
   }
+});
+
+test("the page survives output no designer would have chosen", () => {
+  // Every string on a report is written by a model or copied out of someone else's
+  // file. This is the worst case: an unbreakable 600-character token, a title at the
+  // clip limit, a path deeper than the column is wide. It must render, and it must
+  // not smuggle markup through.
+  const wall = "A".repeat(600);
+  const url = `https://example.com/${"seg/".repeat(60)}?q=${"x".repeat(200)}`;
+  const nasty = assemble(
+    { files: [f("deploy-helper/SKILL.md", SKILL)], source: { kind: "upload", label: `<img src=x onerror=alert(1)> ${wall}` } },
+    {
+      ...auditWith([
+        finding({ title: "T".repeat(90), evidence: wall, why: url, fix: wall, file: `${"deep/".repeat(20)}SKILL.md` }),
+        finding({ severity: "info", categoryId: "library", title: "<script>alert(1)</script>", evidence: "# Deploy", why: url, fix: url }),
+      ]),
+      partial: [{ skill: wall, kept: 99 }],
+      clipped: [{ skill: wall, path: `${"deep/".repeat(20)}big.md`, shown: 1, of: 9_999_999 }],
+    },
+  );
+
+  for (const html of [resultPage(nasty, null), resultPage(nasty, { id: "u", email: "a@b.c", name: "A" })]) {
+    assert.ok(html.length > 1000);
+    assert.ok(!html.includes("<img src=x onerror"), "the source label was not escaped");
+    assert.ok(!html.includes("<script>alert(1)</script>"), "a finding title was not escaped");
+    assert.ok(!/undefined|\[object Object\]|NaN/.test(html), "a placeholder reached the page");
+  }
+});
+
+test("the stylesheet carries the rules that stop long output pushing the page sideways", () => {
+  // min-width:auto on grid and flex children is the cause of almost every broken
+  // layout: the child refuses to shrink below its longest unbreakable word. These
+  // three declarations are load-bearing, so a refactor that drops them fails here.
+  assert.ok(CSS.includes(".cols > *{min-width:0}"), "grid children must be allowed to shrink");
+  assert.ok(/overflow-wrap:anywhere/.test(CSS), "long unbroken strings must be breakable");
+  assert.ok(/\.wrap\{overflow-x:clip\}/.test(CSS), "the page body must never scroll sideways");
 });
