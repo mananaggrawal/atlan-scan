@@ -267,8 +267,15 @@ footer.bot .disc{max-width:62em;line-height:1.6}
 
 /* landing tabs */
 .tabs{display:flex;gap:4px;background:var(--blue-soft);border-radius:12px;padding:6px;flex-wrap:wrap}
-.tab{flex:1;min-width:130px;border:1.5px solid transparent;background:transparent;border-radius:9px;padding:13px 14px;font-family:var(--body);font-size:15px;font-weight:500;color:var(--ink-strong);cursor:pointer;transition:.15s}
+.tab{flex:1;min-width:132px;border:1.5px solid transparent;background:transparent;border-radius:9px;padding:13px 14px;font-family:var(--body);font-size:15px;font-weight:500;color:var(--ink-strong);cursor:pointer;transition:.15s;
+  display:inline-flex;align-items:center;justify-content:center;gap:9px;text-align:left}
+.tab svg{flex:0 0 auto;width:17px;height:17px;color:var(--faint);transition:.15s}
+.tab .tl{color:var(--muted);font-weight:400;min-width:0}
+.tab .tl b{color:var(--ink-strong);font-weight:600}
+.tab:hover svg{color:var(--muted)}
 .tab.on{background:#fff;border-color:var(--blue)}
+.tab.on svg{color:var(--blue)}
+.tab.on .tl b{color:var(--blue)}
 .tabwrap{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:34px;align-items:start;margin-top:34px}
 .tabwrap .td{font-size:15.5px;color:var(--ink);line-height:1.55}
 .tabwrap .td b{color:var(--ink-strong)}

@@ -198,7 +198,7 @@ Four bounds, all environment variables:
 |---|---|
 | `SCAN_REVIEW_BUDGET_USD` | hard ceiling per server process; reviews stop and say so, scans carry on |
 | `SCAN_REVIEW_MAX_SKILLS` | uncached skills one run may review, default 25 |
-| `SCAN_REVIEW_MAX_TOKENS` | output ceiling per skill, default 1000 |
+| `SCAN_REVIEW_MAX_TOKENS` | output ceiling per skill, default 16000 |
 | `SCAN_REVIEW_MAX_CHARS` | chars of a skill sent to the auditor, shared fairly across its files, default 160000 |
 
 The ceiling applies only to skills that would cost a call, so a big folder
