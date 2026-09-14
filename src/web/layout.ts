@@ -68,6 +68,8 @@ ${o.body}
         <li><a href="/#platform">What gets checked</a></li>
         <li><a href="/#faq">Questions</a></li>
         <li><a href="/history">Your scans</a></li>
+        <li><a href="/privacy">Privacy</a></li>
+        <li><a href="/terms">Terms</a></li>
       </ul>
     </div>
   </div>

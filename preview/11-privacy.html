@@ -1,5 +1,14 @@
-/** Atlan design tokens, carried over from the decision deck so Scan matches everything else. */
-export const CSS = String.raw`
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Privacy — Atlan Scan</title>
+<meta name="description" content="Read what is actually in the skills you install.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Funnel+Display:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='22' height='22' x='2' y='2' rx='5' fill='%232026D2'/%3E%3Crect width='13' height='13' x='17' y='17' rx='3.5' fill='%2362E1FC'/%3E%3C/svg%3E">
+<style>
 :root{
   --page:#F9F9FC; --surface:#FFFFFF; --surface-2:#F2F2F7;
   --ink:#3E4C59; --ink-strong:#1B1C24; --muted:#77778E; --faint:#A3A3B8;
@@ -504,4 +513,97 @@ footer.bot{border-top:1px solid var(--line);margin-top:74px;padding:48px 0 34px;
 .legal ul{margin:0 0 12px;padding-left:20px}
 .legal li{font-size:15px;color:var(--muted);line-height:1.68;margin-bottom:7px}
 .legalfoot{font-size:13px;color:var(--faint);margin:26px 0 60px;padding-top:18px;border-top:1px solid var(--line-soft)}
-`;
+</style>
+</head><body>
+<header class="top"><div class="wrap topin">
+  <a class="brand" href="/"><span class="sq"></span>Atlan <em>Scan</em></a>
+  <nav class="topnav">
+    <a href="/scan">Scan</a>
+    <a href="/auth/google?next=%2Fhistory">Sign in</a>
+  </nav>
+</div></header>
+<main class="growmain">
+
+<div class="wrap">
+  <div class="sectop" style="padding-top:56px">
+    <span class="eyebrow">Privacy</span>
+    <h2>What we keep, and what we do not.</h2>
+    <p>Atlan Scan reads skills you point it at and reports what is in them. This is everything it does with what it reads.</p>
+  </div>
+  <div class="legal">
+<h3>Skill files are never stored</h3>
+<p>Files are read in memory and dropped when the scan finishes. The contents of your
+skills are not written to disk, not logged, and not used to train anything.</p>
+
+<h3>What a scan does keep</h3>
+<p>Four things, for ninety days, so a report you come back to still exists and a
+re-scan can be compared against it:</p>
+<ul>
+  <li>the list of findings — the check that fired, its category and severity</li>
+  <li>counts: skills, files read, files that could not be read</li>
+  <li>a SHA-256 for each skill, which identifies the bytes without revealing them</li>
+  <li>the single line each finding quotes, because a finding without its evidence is
+      worth nothing</li>
+</ul>
+<p>That last one is the only text from your files that persists, and only where a
+check actually fired.</p>
+
+<h3>If you sign in</h3>
+<p>Signing in with Google gives us your email address, name and Google account id, so
+that scans you ran are still yours next week. That is the entire scope requested — no
+access to your Drive, mail, contacts or anything else in your account. Sign-in is
+optional; scanning is not gated on it.</p>
+
+<h3>The semantic review</h3>
+<p>When the semantic review is enabled, the text of a skill is sent to Anthropic's
+API to be read by a model, and the findings come back. It is sent as data to be
+audited, it is not used for training, and the model's answer is checked against your
+file before anything is shown. Only the findings are kept, under the rules above.</p>
+
+<h3>What we do not do</h3>
+<ul>
+  <li>No advertising, no trackers, no analytics scripts, no third-party pixels.</li>
+  <li>Your scans are not shared with anyone unless you publish a report yourself.</li>
+  <li>Nothing is sold, and there is nobody to sell it to.</li>
+</ul>
+
+<h3>Deleting things</h3>
+<p>Scans age out after ninety days on their own. To remove a scan or an account before
+that, email the address below and it will be deleted.</p></div>
+  <p class="legalfoot">Last updated 14 September 2026. Questions: <a href="mailto:manan190303@gmail.com">manan190303@gmail.com</a></p>
+</div>
+</main>
+<footer class="bot"><div class="wrap">
+  <div class="fcols">
+    <div class="fbrand">
+      <a class="brand" href="/"><span class="sq"></span>Atlan <em>Scan</em></a>
+      <p>Read what is actually in the skills, MCPs and plugins your agents install — before they run.</p>
+    </div>
+    <div>
+      <h5>Product</h5>
+      <ul>
+        <li><a href="/scan">Scan a skill</a> <span class="flive">free</span></li>
+        <li><a href="/scan">Scan an MCP</a></li>
+        <li><a href="/scan">Scan a plugin</a></li>
+        <li><a href="/scan">Scan a sub-agent</a></li>
+      </ul>
+    </div>
+    <div>
+      <h5>Resources</h5>
+      <ul>
+        <li><a href="/#how">How it works</a></li>
+        <li><a href="/#platform">What gets checked</a></li>
+        <li><a href="/#faq">Questions</a></li>
+        <li><a href="/history">Your scans</a></li>
+        <li><a href="/privacy">Privacy</a></li>
+        <li><a href="/terms">Terms</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="fbot">
+    <span>Atlan Scan — the free scanner in front of <a href="https://atlan.com" rel="noreferrer">Atlan</a> Agent Registry.</span>
+    <span class="sp"><span class="mono">engine scan-1.0.0</span></span>
+  </div>
+</div></footer>
+
+</body></html>
