@@ -97,7 +97,20 @@ function caveats(r: ScanResult, full: boolean): string {
     </div>`;
   }
 
-  const named = (parts: string[]): string => (full ? ` — ${esc(parts.join("; "))}` : "");
+  /**
+   * The count is the admission; the names are the detail. A skill with fifty
+   * files that did not fit produced fifty names in one sentence — a paragraph of
+   * paths nobody reads, burying the three lines above it that matter. So the list
+   * is capped and says how many it did not print. The number at the front of the
+   * line is never capped, because that is the part that must be honest.
+   */
+  const NAMES = 6;
+  const named = (parts: string[]): string => {
+    if (!full || !parts.length) return "";
+    const head = parts.slice(0, NAMES);
+    const rest = parts.length - head.length;
+    return ` — ${esc(head.join("; "))}${rest ? esc(`, and ${rest} more`) : ""}`;
+  };
   const lines: string[] = [];
 
   if (a.failures.length) {
@@ -111,8 +124,11 @@ function caveats(r: ScanResult, full: boolean): string {
     )}. What it had written is below; the rest was never written.`);
   }
   if (r.notFullyRead.length) {
+    // Named worst-first: the file that lost the most characters is the one a reader
+    // needs to see, not whichever file happens to sort first.
+    const worst = [...r.notFullyRead].sort((a, b) => b.of - b.shown - (a.of - a.shown));
     lines.push(`${plural(r.notFullyRead.length, "file")} shown only in part${named(
-      r.notFullyRead.map((x) => `${shortPath(x.path)} (${x.shown.toLocaleString()} of ${x.of.toLocaleString()} chars)`),
+      worst.map((x) => `${shortPath(x.path)} (${x.shown.toLocaleString()} of ${x.of.toLocaleString()} chars)`),
     )}. What was not shown was not audited.`);
   }
   if (r.unreadable.length) {

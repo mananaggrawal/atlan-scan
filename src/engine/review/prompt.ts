@@ -87,6 +87,14 @@ Audit every category on every skill, including metadata and provenance. A
 category you skipped and a category that came back clean are indistinguishable in
 the report, which is why you do not skip any.
 
+**A file may arrive shortened.** A \`clipped="N of M chars"\` attribute means you
+are seeing the first N characters of that file and nothing after them;
+\`shown="none"\` means you are seeing none of it at all. Audit what is in front of
+you and nothing else. Do not report a finding against text you were not shown, and
+do not report the shortening itself — the report already states which files were
+not read in full, from the same measurement, and a finding saying so is a finding
+spent on nothing. Every quote you give must be text that appears in this message.
+
 ${WIRE}`;
 
 /**
@@ -125,7 +133,66 @@ quotes one of the two.
 ${WIRE}`;
 
 /** Per-skill character budget across all its files. A clipped file is reported, never silently dropped. */
-export const MAX_SKILL_CHARS = Number(process.env["SCAN_REVIEW_MAX_CHARS"] ?? 60_000);
+export const MAX_SKILL_CHARS = Number(process.env["SCAN_REVIEW_MAX_CHARS"] ?? 160_000);
+
+/**
+ * The floor every readable file is guaranteed, so long as the budget can cover one
+ * for each of them. A file shown at zero chars is a file the auditor cannot quote,
+ * and a model handed a list of files it was not shown invents quotes for them —
+ * every one of which the verifier discards, after the answer has already spent the
+ * output ceiling on them. Zero-char files are how a scan burns its whole budget
+ * producing nothing.
+ */
+const MIN_PER_FILE = 600;
+
+/** The manifest is the skill; the rest is beside it. A weight, not a reservation. */
+const MANIFEST_WEIGHT = 3;
+
+/** Hard ceiling, so a folder of thousands of files cannot blow the context window. */
+const HARD_CAP = 400_000;
+
+/**
+ * Split a budget across files so that no file is starved by the one before it.
+ *
+ * The rule used to be first-come-first-served in path order, which is only fair
+ * while everything fits. When one file does not fit — a 59,000-char SKILL.md, a
+ * 66,000-char script — it takes the whole budget and every file after it is shown
+ * at zero, in alphabetical order, which is not an audit priority: on a real skill
+ * this spent the budget on JSON fixtures and showed the README, the spec and every
+ * script at 0 of their chars.
+ *
+ * So: weighted water-filling. Every file is promised an equal share of what is
+ * left (the manifest three shares, because it is the skill itself); any file
+ * smaller than its share takes only what it needs and hands the remainder back to
+ * be re-shared among the files still asking. Repeat until nothing more can be
+ * satisfied in full, then split the remainder by weight. Small files always arrive
+ * whole, large files divide what is left between them evenly, and nothing is shown
+ * at zero while something else is shown in full.
+ */
+export function allocate(sizes: number[], weights: number[], budget: number): number[] {
+  const out = sizes.map(() => 0);
+  let open = sizes.map((_, i) => i);
+  let left = budget;
+
+  while (open.length && left > 0) {
+    const weight = open.reduce((n, i) => n + weights[i]!, 0);
+    if (weight <= 0) break;
+    const unit = left / weight;
+    const satisfied = open.filter((i) => sizes[i]! <= weights[i]! * unit);
+    if (!satisfied.length) {
+      // Nobody left can be shown in full: divide what remains by weight and stop.
+      for (const i of open) out[i] = Math.floor(weights[i]! * unit);
+      return out;
+    }
+    for (const i of satisfied) {
+      out[i] = sizes[i]!;
+      left -= sizes[i]!;
+    }
+    const done = new Set(satisfied);
+    open = open.filter((i) => !done.has(i));
+  }
+  return out;
+}
 
 export interface SkillDocument {
   text: string;
@@ -154,8 +221,20 @@ export function buildSkillDocument(skill: SkillDoc, facts: SkillFacts, budget = 
     return a.path.localeCompare(b.path);
   });
 
+  // An unreadable file costs no budget, so the split is over the readable ones only.
+  // A folder with more files than the budget has floors for raises the budget to
+  // cover them, up to the hard cap: a head of every file is what keeps the report
+  // able to say what it did and did not see.
+  const readable = ordered.filter((f) => f.readable && f.text !== null);
+  const effective = Math.min(HARD_CAP, Math.max(budget, readable.length * MIN_PER_FILE));
+  const share = allocate(
+    readable.map((f) => f.text!.length),
+    readable.map((f) => (f.path === skill.skillPath ? MANIFEST_WEIGHT : 1)),
+    effective,
+  );
+  const allowed = new Map(readable.map((f, i) => [f.path, share[i]!]));
+
   const parts: string[] = [];
-  let left = budget;
 
   for (const f of ordered) {
     if (!f.readable || f.text === null) {
@@ -163,14 +242,13 @@ export function buildSkillDocument(skill: SkillDoc, facts: SkillFacts, budget = 
       parts.push(`<file path="${f.path}" readable="no">\n(${f.bytes} bytes — could not be decoded as text)\n</file>`);
       continue;
     }
-    if (left <= 0) {
-      clipped.push({ path: f.path, shown: 0, of: f.text.length });
-      parts.push(`<file path="${f.path}" shown="none">\n(not shown — the per-skill budget was already spent)\n</file>`);
+    const cap = allowed.get(f.path) ?? 0;
+    const text = f.text.slice(0, cap);
+    if (text.length < f.text.length) clipped.push({ path: f.path, shown: text.length, of: f.text.length });
+    if (!text.length) {
+      parts.push(`<file path="${f.path}" shown="none">\n(not shown — ${f.text.length} chars, and this skill is larger than the per-skill budget)\n</file>`);
       continue;
     }
-    const text = f.text.length <= left ? f.text : f.text.slice(0, left);
-    if (text.length < f.text.length) clipped.push({ path: f.path, shown: text.length, of: f.text.length });
-    left -= text.length;
     const attr = text.length < f.text.length ? ` clipped="${text.length} of ${f.text.length} chars"` : "";
     parts.push(`<file path="${f.path}"${attr}>\n${text}\n</file>`);
   }
@@ -181,6 +259,10 @@ frontmatter keys present: ${facts.keysPresent.length ? facts.keysPresent.join(",
 frontmatter keys absent: ${facts.keysMissing.length ? facts.keysMissing.join(", ") : "(none)"}
 description + trigger: ${facts.descriptionChars} chars
 could not be decoded: ${unreadable.length ? unreadable.join(", ") : "(none)"}
+shown in full: ${facts.files.length - unreadable.length - clipped.length} of ${facts.files.length - unreadable.length} readable files
+shown only in part: ${
+    clipped.length ? clipped.map((c) => `${c.path} (${c.shown} of ${c.of} chars)`).join("; ") : "(none)"
+  }
 links to files not in this upload: ${
     facts.danglingRefs.length ? facts.danglingRefs.map((d) => `${d.from} → ${d.ref}`).join("; ") : "(none)"
   }

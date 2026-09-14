@@ -4,7 +4,7 @@ import { parseTree, type RawFile } from "../src/engine/parse.ts";
 import { skillFacts, libraryFacts } from "../src/engine/facts.ts";
 import { locate, verifySkill, verifyLibrary, corpusOf, MAX_PER_SKILL } from "../src/engine/review/verify.ts";
 import { extractJson } from "../src/engine/review/client.ts";
-import { SYSTEM, LIBRARY_SYSTEM, buildSkillDocument, buildLibraryDocument } from "../src/engine/review/prompt.ts";
+import { SYSTEM, LIBRARY_SYSTEM, allocate, buildSkillDocument, buildLibraryDocument } from "../src/engine/review/prompt.ts";
 import { cacheKey } from "../src/engine/review/index.ts";
 
 const f = (path: string, body: string): RawFile => ({ path, data: Buffer.from(body) });
@@ -86,6 +86,49 @@ test("a file too big for the budget is clipped and the clip is reported", () => 
 
   assert.ok(doc.clipped.length >= 1, "the clip is recorded rather than silently applied");
   assert.ok(doc.text.includes("clipped=") || doc.text.includes('shown="none"'));
+});
+
+/**
+ * The bug this is here to stop coming back: on a real skill, a 59,000-char
+ * SKILL.md spent the whole 60,000-char budget in path order, so 51 files were
+ * handed to the model at "0 of N chars". It then wrote findings about files it
+ * had never seen, every one of which the verifier discarded, and hit its output
+ * ceiling doing it. The scan cost a full run and reported four findings.
+ */
+test("one oversized file cannot starve the rest: nothing is shown at zero while anything is shown whole", () => {
+  const files = [f("big-skill/SKILL.md", "M".repeat(59_000))];
+  for (let i = 0; i < 40; i++) files.push(f(`big-skill/fixtures/case-${i}.json`, "x".repeat(900)));
+  files.push(f("big-skill/README.md", "R".repeat(7_000)));
+  files.push(f("big-skill/scripts/build.py", "P".repeat(66_000)));
+
+  const skill = one(files);
+  const doc = buildSkillDocument(skill, skillFacts(skill), 160_000);
+
+  assert.equal(doc.clipped.filter((c) => c.shown === 0).length, 0, "no readable file is shown at zero chars");
+  assert.ok(!doc.text.includes('shown="none"'));
+  assert.ok(doc.text.includes("RRRR"), "the README is in there, not just the files that sorted first");
+  assert.ok(doc.text.includes("PPPP"), "and so is the script");
+  // Every file still costs something, so the budget is respected.
+  assert.ok(doc.text.length < 200_000);
+});
+
+test("allocate: small files arrive whole and the big ones split what is left", () => {
+  const got = allocate([100, 100, 90_000, 90_000], [1, 1, 1, 1], 20_000);
+  assert.deepEqual(got.slice(0, 2), [100, 100], "a file smaller than its share is shown in full");
+  assert.ok(got[2]! > 9_000 && got[3]! > 9_000, "what they did not use is re-shared, not lost");
+  assert.equal(got[2], got[3], "equal weights, equal share");
+  assert.ok(got.reduce((a, b) => a + b, 0) <= 20_000);
+});
+
+test("allocate: the manifest is weighted, not reserved", () => {
+  const [manifest, other] = allocate([50_000, 50_000], [3, 1], 20_000);
+  assert.ok(manifest! > other!, "SKILL.md gets the larger share");
+  assert.ok(other! > 0, "but never nothing");
+});
+
+test("the model is told not to quote a file it was only shown part of", () => {
+  assert.ok(/clipped=/.test(SYSTEM));
+  assert.ok(/Do not report a finding against text you were not shown/.test(SYSTEM));
 });
 
 test("an unreadable file is named to the model instead of omitted", () => {

@@ -18,7 +18,7 @@ const endpoint = (): string => process.env["SCAN_REVIEW_ENDPOINT"] ?? "https://a
  * finding list — a badly-written skill legitimately produces a dozen.
  */
 const MAX_TOKENS = Number(process.env["SCAN_REVIEW_MAX_TOKENS"] ?? 16_000);
-const TIMEOUT_MS = Number(process.env["SCAN_REVIEW_TIMEOUT_MS"] ?? 25_000);
+const TIMEOUT_MS = Number(process.env["SCAN_REVIEW_TIMEOUT_MS"] ?? 45_000);
 
 export function reviewEnabled(): boolean {
   return Boolean(process.env["ANTHROPIC_API_KEY"]);
