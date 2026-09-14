@@ -1,0 +1,950 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Scan results — 39 findings</title>
+<meta name="description" content="Read what is actually in the skills you install.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Funnel+Display:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='22' height='22' x='2' y='2' rx='5' fill='%232026D2'/%3E%3Crect width='13' height='13' x='17' y='17' rx='3.5' fill='%2362E1FC'/%3E%3C/svg%3E">
+<style>
+:root{
+  --page:#F9F9FC; --surface:#FFFFFF; --surface-2:#F2F2F7;
+  --ink:#3E4C59; --ink-strong:#1B1C24; --muted:#77778E; --faint:#A3A3B8;
+  --blue:#2026D2; --blue-soft:#EDEEFD; --blue-line:#B9BBEC;
+  --cyan:#62E1FC; --pink:#F34D77; --pink-soft:#FDEDF1;
+  --line:#DDDDE3; --line-soft:#E9E9F0;
+  --crit:#D01B49; --crit-bg:#FDEDF1; --high:#B06A08; --high-bg:#FBF0E4;
+  --med:#8A7413; --med-bg:#F8F4E4; --low:#5A6270; --low-bg:#F1F2F5;
+  --info:#77778E; --info-bg:#F2F2F7; --clear:#2E8B57;
+  --display:"Funnel Display",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --body:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--page);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+a{color:var(--blue);text-decoration:none}
+a:hover{text-decoration:underline}
+h1,h2,h3,h4{font-family:var(--display);color:var(--ink-strong);letter-spacing:-.028em;margin:0;font-weight:600;text-wrap:balance}
+h1{font-size:clamp(33px,4.5vw,53px);line-height:1.05;letter-spacing:-.034em}
+h2{font-size:clamp(24px,3vw,32px);line-height:1.12}
+h3{font-size:19px;line-height:1.25;letter-spacing:-.018em}
+p{margin:0}
+.mono{font-family:var(--mono)}
+.wrap{width:min(1120px,calc(100% - 40px));margin:0 auto}
+.narrow{width:min(760px,calc(100% - 40px));margin:0 auto}
+
+/* header */
+header.top{border-bottom:1px solid var(--line);background:rgba(249,249,252,.92);backdrop-filter:blur(8px);position:sticky;top:0;z-index:20}
+.topin{display:flex;align-items:center;gap:20px;height:60px}
+.brand{font-family:var(--display);font-weight:600;font-size:19px;letter-spacing:-.03em;color:var(--ink-strong);display:flex;align-items:center;gap:7px}
+.brand:hover{text-decoration:none}
+.brand .sq{width:15px;height:15px;border-radius:3px;background:var(--blue);position:relative;display:inline-block}
+.brand .sq::after{content:"";position:absolute;right:-4px;bottom:-4px;width:9px;height:9px;border-radius:2px;background:var(--cyan)}
+.brand em{font-style:normal;color:var(--blue)}
+.topnav{margin-left:auto;display:flex;align-items:center;gap:18px;font-size:13.5px}
+.topnav a{color:var(--muted)}
+.topnav a:hover{color:var(--ink-strong);text-decoration:none}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-family:var(--body);font-weight:500;font-size:14.5px;padding:11px 20px;border-radius:7px;border:1px solid transparent;cursor:pointer;transition:.15s;text-decoration:none;white-space:nowrap}
+.btn:hover{text-decoration:none}
+.btn-primary{background:var(--ink-strong);color:#fff}
+.btn-primary:hover{background:#000}
+.btn-blue{background:var(--blue);color:#fff}
+.btn-blue:hover{background:#171CA8}
+.btn-ghost{background:var(--surface);color:var(--ink-strong);border-color:var(--line)}
+.btn-ghost:hover{border-color:#C2C2D0}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn-lg{font-size:16px;padding:14px 26px}
+
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--faint)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:11px}
+.muted{color:var(--muted)}
+.faint{color:var(--faint)}
+.tnum{font-variant-numeric:tabular-nums}
+
+/* landing */
+.hero{padding:74px 0 60px}
+.hero .lede{font-size:19px;line-height:1.5;color:var(--ink);max-width:36em;margin-top:20px}
+.hero .cta{display:flex;gap:12px;margin-top:32px;flex-wrap:wrap}
+.hero mark{background:linear-gradient(transparent 62%,var(--cyan) 62%);color:inherit;padding:0 .06em}
+.strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:11px;overflow:hidden;margin-top:52px}
+.strip>div{background:var(--surface);padding:20px 22px}
+.strip .v{font-family:var(--display);font-size:29px;font-weight:600;color:var(--ink-strong);letter-spacing:-.03em;display:block;line-height:1.1}
+.strip .k{font-size:12.5px;color:var(--muted);display:block;margin-top:7px;line-height:1.4}
+.strip .s{font-family:var(--mono);font-size:10.5px;color:var(--faint);display:block;margin-top:9px}
+section.band{padding:60px 0;border-top:1px solid var(--line-soft)}
+.cats{display:grid;grid-template-columns:repeat(auto-fit,minmax(268px,1fr));gap:14px;margin-top:30px}
+.cat{padding:19px 20px}
+.cat .n{font-family:var(--mono);font-size:10.5px;letter-spacing:.13em;color:var(--blue)}
+.cat h3{margin:9px 0 7px;font-size:16.5px}
+.cat p{font-size:13.5px;color:var(--muted);line-height:1.5}
+.honest{background:var(--blue-soft);border:1px dashed var(--blue-line);border-radius:11px;padding:26px 28px;margin-top:30px}
+.honest h3{color:var(--blue)}
+.honest p{font-size:14.5px;color:var(--ink);margin-top:10px;max-width:60em}
+
+/* scan page */
+.types{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:12px;margin:26px 0}
+.type{position:relative;padding:18px 18px 16px;cursor:pointer;display:block;background:var(--surface);border:1px solid var(--line);border-radius:11px;transition:.15s}
+.type.on{border-color:var(--ink-strong);box-shadow:0 0 0 1px var(--ink-strong)}
+.type.locked{background:var(--surface-2);cursor:default;border-style:dashed}
+.type .t{font-family:var(--display);font-weight:600;font-size:17px;color:var(--ink-strong)}
+.type .d{font-size:12px;color:var(--muted);margin-top:5px}
+.type .tag{position:absolute;top:12px;right:12px;font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--blue);background:var(--blue-soft);border-radius:4px;padding:3px 7px}
+.drop{border:1.5px dashed var(--line);border-radius:11px;background:var(--surface);padding:40px 28px;text-align:center;transition:.15s}
+.drop.hot{border-color:var(--blue);background:var(--blue-soft)}
+.drop h3{margin-bottom:6px}
+.or{display:flex;align-items:center;gap:14px;color:var(--faint);font-family:var(--mono);font-size:11px;letter-spacing:.16em;margin:20px 0}
+.or::before,.or::after{content:"";height:1px;background:var(--line);flex:1}
+.field{display:flex;gap:10px}
+input[type=text]{flex:1;font-family:var(--mono);font-size:14px;padding:12px 14px;border:1px solid var(--line);border-radius:7px;background:var(--surface);color:var(--ink-strong);min-width:0}
+input[type=text]:focus{outline:2px solid var(--blue);outline-offset:-1px;border-color:var(--blue)}
+.privacy{font-size:12.5px;color:var(--muted);margin-top:18px;line-height:1.55}
+.err{background:var(--pink-soft);border:1px solid #F6BFCE;color:#9E1338;border-radius:8px;padding:12px 15px;font-size:14px;margin-top:18px}
+.spin{display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* result */
+.rhead{padding:40px 0 26px}
+.verdict{font-family:var(--display);font-weight:600;font-size:clamp(27px,3.6vw,40px);line-height:1.14;letter-spacing:-.032em;color:var(--ink-strong);max-width:19em}
+.verdict b{color:var(--crit);font-weight:600}
+.verdict i{font-style:normal;color:var(--blue)}
+.rmeta{display:flex;gap:9px;flex-wrap:wrap;margin-top:18px;font-family:var(--mono);font-size:11.5px;color:var(--muted)}
+.rmeta span{background:var(--surface);border:1px solid var(--line);border-radius:5px;padding:5px 9px}
+.sevrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));gap:10px;margin-top:24px}
+.sev{border-radius:9px;padding:13px 15px;border:1px solid}
+.sev .v{font-family:var(--display);font-size:27px;font-weight:600;line-height:1;letter-spacing:-.03em}
+.sev .k{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;margin-top:8px;display:block}
+.sev.critical{border-color:#F3C3D2;background:var(--crit-bg);color:var(--crit)}
+.sev.high{border-color:#EBD3B4;background:var(--high-bg);color:var(--high)}
+.sev.medium{border-color:#E7DEB9;background:var(--med-bg);color:var(--med)}
+.sev.low{border-color:var(--line);background:var(--low-bg);color:var(--low)}
+.sev.info{border-color:var(--line);background:var(--info-bg);color:var(--info)}
+.sev.zero{opacity:.5}
+
+.gate{margin:28px 0;background:var(--surface);border:1px solid var(--blue-line);border-radius:12px;padding:28px 30px;display:flex;gap:26px;align-items:center;flex-wrap:wrap}
+.gate .g1{flex:1;min-width:260px}
+.gate h3{font-size:21px}
+.gate p{font-size:14.5px;color:var(--muted);margin-top:9px;max-width:44em}
+.gbtn{display:inline-flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:11px 18px;font-size:14.5px;font-weight:500;color:var(--ink-strong);cursor:pointer;transition:.15s}
+.gbtn:hover{border-color:#C2C2D0;text-decoration:none;box-shadow:0 1px 3px rgba(20,20,50,.07)}
+
+.catgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;margin-top:16px}
+.cr{padding:16px 17px;display:flex;flex-direction:column;gap:6px}
+.cr .top{display:flex;align-items:baseline;gap:9px}
+.cr .nm{font-family:var(--display);font-weight:600;font-size:15px;color:var(--ink-strong);letter-spacing:-.015em;flex:1}
+.cr .ast{font-family:var(--mono);font-size:9.5px;color:var(--faint);letter-spacing:.06em}
+.cr .ct{font-family:var(--mono);font-size:12px;font-weight:500}
+.cr .bl{font-size:12.5px;color:var(--muted);line-height:1.45}
+.pill{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;border-radius:4px;padding:3px 7px;border:1px solid}
+.pill.critical{color:var(--crit);background:var(--crit-bg);border-color:#F3C3D2}
+.pill.high{color:var(--high);background:var(--high-bg);border-color:#EBD3B4}
+.pill.medium{color:var(--med);background:var(--med-bg);border-color:#E7DEB9}
+.pill.low{color:var(--low);background:var(--low-bg);border-color:var(--line)}
+.pill.info{color:var(--info);background:var(--info-bg);border-color:var(--line)}
+.pill.none{color:var(--clear);background:#EAF5EF;border-color:#C4E2D2}
+
+.f{padding:19px 21px;margin-top:11px;border-left-width:3px}
+.f.critical{border-left-color:var(--crit)}
+.f.high{border-left-color:var(--high)}
+.f.medium{border-left-color:var(--med)}
+.f.low{border-left-color:var(--line)}
+.f.info{border-left-color:var(--line)}
+.f .fh{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.f .ft{font-family:var(--display);font-weight:600;font-size:16.5px;color:var(--ink-strong);letter-spacing:-.016em}
+.f .loc{font-family:var(--mono);font-size:11.5px;color:var(--muted);margin-left:auto}
+.quote{font-family:var(--mono);font-size:12.5px;line-height:1.6;background:var(--surface-2);border:1px solid var(--line-soft);border-radius:6px;padding:11px 13px;margin:12px 0;color:var(--ink-strong);overflow-x:auto;white-space:pre-wrap;word-break:break-word}
+.f .why{font-size:14px;color:var(--ink);line-height:1.55}
+.f .fix{font-size:13.5px;color:var(--ink);line-height:1.55;margin-top:9px;padding-left:13px;border-left:2px solid var(--cyan)}
+.f .fix b{font-family:var(--mono);font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:3px;font-weight:500}
+
+table.tbl{width:100%;border-collapse:collapse;margin-top:16px;font-size:13.5px}
+table.tbl th{text-align:left;font-family:var(--mono);font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--faint);font-weight:500;padding:0 12px 9px;border-bottom:1px solid var(--line)}
+table.tbl td{padding:11px 12px;border-bottom:1px solid var(--line-soft);vertical-align:baseline}
+table.tbl tr:last-child td{border-bottom:0}
+table.tbl td.r{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;color:var(--muted)}
+table.tbl td.nm{font-family:var(--mono);color:var(--ink-strong)}
+
+.locked-panel{background:var(--surface-2);border:1px dashed var(--line);border-radius:11px;padding:24px 26px;margin-top:14px}
+.locked-panel ul{margin:14px 0 0;padding:0;list-style:none;display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:11px}
+.locked-panel li{font-size:13.5px;color:var(--muted);padding-left:20px;position:relative;line-height:1.45}
+.locked-panel li::before{content:"";position:absolute;left:0;top:6px;width:10px;height:10px;border:1.5px solid var(--faint);border-radius:2px}
+.note{font-size:12.5px;color:var(--muted);line-height:1.6;margin-top:14px}
+footer.bot{border-top:1px solid var(--line);margin-top:70px;padding:30px 0 44px;font-size:12.5px;color:var(--faint)}
+footer.bot .disc{max-width:62em;line-height:1.6}
+.secthead{display:flex;align-items:baseline;gap:12px;margin-top:44px}
+.secthead h2{font-size:23px}
+.secthead .c{font-family:var(--mono);font-size:11.5px;color:var(--faint);margin-left:auto}
+@media (max-width:640px){
+  .hero{padding:48px 0 40px}
+  .gate{padding:22px}
+  .f .loc{margin-left:0;width:100%}
+}
+
+/* ---- AIR-shaped layout: type picker, result rail, category cards, locks ---- */
+.pagehead{display:flex;align-items:flex-start;gap:24px;padding:38px 0 8px;flex-wrap:wrap}
+.orb{width:96px;height:96px;border-radius:22px;flex:none;position:relative;
+   background:linear-gradient(150deg,var(--blue) 0%,#4A50E8 52%,var(--cyan) 100%);
+   box-shadow:0 10px 26px rgba(32,38,210,.22)}
+.orb::after{content:"";position:absolute;left:50%;top:50%;width:34%;height:34%;border-radius:7px;
+   background:#fff;transform:translate(-58%,-58%) rotate(14deg);opacity:.92}
+.orb::before{content:"";position:absolute;right:13%;bottom:13%;width:17%;height:17%;border-radius:4px;background:rgba(255,255,255,.55)}
+.pagehead .ph{flex:1;min-width:260px}
+.pagehead h1{font-size:clamp(36px,5.4vw,62px);line-height:1}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;align-items:center}
+.chip{font-family:var(--mono);font-size:12px;color:var(--ink-strong);background:var(--surface-2);border-radius:5px;padding:5px 9px}
+.chip .lbl{color:var(--muted);margin-right:7px}
+
+.pick{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin:26px 0 22px}
+.pk{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:22px 20px 20px;cursor:pointer;transition:.15s;min-height:118px;display:flex;flex-direction:column;justify-content:flex-end}
+.pk:hover{border-color:#C2C2D0}
+.pk.on{border-color:var(--ink-strong);box-shadow:inset 0 0 0 1px var(--ink-strong)}
+.pk.off{cursor:default;background:var(--surface);opacity:.72}
+.pk .dot{position:absolute;top:16px;right:16px;width:17px;height:17px;border-radius:50%;border:1.5px solid var(--line);display:grid;place-items:center}
+.pk.on .dot{border-color:var(--ink-strong)}
+.pk.on .dot::after{content:"";width:9px;height:9px;border-radius:50%;background:var(--ink-strong)}
+.pk .ic{font-size:17px;color:var(--muted);margin-bottom:auto}
+.pk .t{font-family:var(--display);font-weight:600;font-size:20px;color:var(--ink-strong);letter-spacing:-.02em}
+.pk .d{font-size:12.5px;color:var(--muted);margin-top:4px;line-height:1.4}
+.pk .ent{position:absolute;top:15px;left:18px;font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--blue)}
+.wide{width:100%;justify-content:center;padding:17px 24px;font-size:16px;border-radius:10px}
+
+/* result: main + rail */
+.cols{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:26px;align-items:start}
+.rail{position:sticky;top:80px;display:flex;flex-direction:column;gap:14px}
+.rail .rc{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px 20px}
+.rail .rc h4{font-family:var(--display);font-weight:600;font-size:17px;color:var(--ink-strong)}
+.rail .rc p{font-size:12.5px;color:var(--muted);margin-top:5px;line-height:1.45}
+.rail .kv{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-top:1px solid var(--line-soft);font-size:13px}
+.rail .kv:first-of-type{border-top:0}
+.rail .kv b{font-family:var(--mono);font-weight:400;color:var(--ink-strong);font-variant-numeric:tabular-nums}
+.rail .rlabel{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);display:block;margin:16px 0 8px}
+
+/* category cards */
+.catcard{background:var(--surface);border:1px solid var(--line);border-radius:12px;margin-bottom:14px;overflow:hidden}
+.cathead{display:flex;align-items:center;gap:12px;padding:19px 22px;flex-wrap:wrap}
+.cathead h3{font-size:21px;letter-spacing:-.022em}
+.astbadge{font-family:var(--mono);font-size:10px;letter-spacing:.08em;color:var(--muted);border:1px solid var(--line);border-radius:20px;padding:3px 9px 3px 7px;display:inline-flex;align-items:center;gap:5px}
+.astbadge::before{content:"◈";color:var(--faint);font-size:9px}
+.status{margin-left:auto;font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;display:inline-flex;align-items:center;gap:6px}
+.status.clear{color:var(--clear)}
+.status.flag{color:var(--crit)}
+.status.flag.high{color:var(--high)}
+.status.flag.medium{color:var(--med)}
+.status.flag.low{color:var(--low)}
+.catbody{border-top:1px solid var(--line-soft);padding:4px 22px 8px}
+.sub{padding:17px 0;border-top:1px solid var(--line-soft)}
+.sub:first-child{border-top:0}
+.sub .sh{display:flex;align-items:baseline;gap:10px}
+.sub .st{font-family:var(--display);font-weight:600;font-size:15.5px;color:var(--ink-strong);letter-spacing:-.012em}
+.sub .sc{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.06em}
+.sub .sc.hit{color:var(--crit)}
+.sub .sd{font-size:13.5px;color:var(--muted);margin-top:5px;line-height:1.5}
+
+.lockrow{margin:14px 0 4px;border-radius:9px;background:var(--surface-2);border:1px solid var(--line-soft);padding:18px;display:grid;place-items:center;position:relative;overflow:hidden}
+.lockrow .bars{position:absolute;inset:14px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;opacity:.5}
+.lockrow .bars i{display:block;height:7px;border-radius:4px;background:var(--line);margin-bottom:8px}
+.lockrow .bars i:nth-child(2){width:72%}
+.lockrow .bars i:nth-child(3){width:54%}
+.lockbtn{position:relative;z-index:1;display:inline-flex;align-items:center;gap:8px;background:var(--ink-strong);color:#fff;border:0;border-radius:8px;padding:11px 20px;font-family:var(--body);font-size:14px;font-weight:500;cursor:pointer}
+.lockbtn:hover{background:#000;text-decoration:none;color:#fff}
+
+.ribbon{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:44px 26px 34px;text-align:center;overflow:hidden;margin-top:22px}
+.ribbon::before{content:"Registry plan";position:absolute;left:-52px;top:20px;transform:rotate(-45deg);background:#FBF0C4;color:#7A6410;font-family:var(--mono);font-size:10px;letter-spacing:.1em;padding:6px 60px}
+.ribbon h3{font-size:23px}
+.ribbon p{font-size:14.5px;color:var(--muted);margin:10px auto 0;max-width:34em;line-height:1.55}
+.ribbon .lk{width:52px;height:52px;margin:0 auto 14px;border-radius:12px;background:var(--blue-soft);display:grid;place-items:center;font-size:23px}
+
+/* modal */
+.mask{position:fixed;inset:0;background:rgba(20,20,40,.5);display:none;place-items:center;z-index:60;padding:20px}
+.mask.on{display:grid}
+.modal{background:#fff;border-radius:16px;max-width:430px;width:100%;padding:34px 32px 26px;position:relative;overflow:hidden}
+.modal::before{content:"Registry plan";position:absolute;left:-52px;top:20px;transform:rotate(-45deg);background:#FBF0C4;color:#7A6410;font-family:var(--mono);font-size:10px;letter-spacing:.1em;padding:6px 60px}
+.modal .x{position:absolute;top:14px;right:14px;border:1px solid var(--line);background:#fff;border-radius:7px;width:30px;height:30px;cursor:pointer;color:var(--muted);font-size:16px;line-height:1}
+.modal h3{font-size:25px;text-align:center;margin-top:6px}
+.modal>p{font-size:14px;color:var(--muted);text-align:center;margin-top:9px;line-height:1.5}
+.modal .lk{width:60px;height:60px;margin:0 auto;border-radius:14px;background:var(--blue-soft);display:grid;place-items:center;font-size:27px}
+.modal input{width:100%;font-family:var(--body);font-size:14.5px;padding:13px 14px;border:1px solid var(--line);border-radius:9px;background:var(--surface-2);margin-top:11px}
+.modal label.ck{display:flex;gap:10px;align-items:flex-start;font-size:12.5px;color:var(--muted);margin-top:15px;line-height:1.45}
+.modal button.sub2{width:100%;margin-top:16px;background:var(--ink-strong);color:#fff;border:0;border-radius:26px;padding:14px;font-size:15px;font-weight:500;cursor:pointer}
+.modal .fine{font-size:11.5px;color:var(--faint);text-align:center;margin-top:12px}
+
+/* landing tabs */
+.tabs{display:flex;gap:4px;background:var(--blue-soft);border-radius:12px;padding:6px;flex-wrap:wrap}
+.tab{flex:1;min-width:130px;border:1.5px solid transparent;background:transparent;border-radius:9px;padding:13px 14px;font-family:var(--body);font-size:15px;font-weight:500;color:var(--ink-strong);cursor:pointer;transition:.15s}
+.tab.on{background:#fff;border-color:var(--blue)}
+.tabwrap{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:34px;align-items:start;margin-top:34px}
+.tabwrap .td{font-size:15.5px;color:var(--ink);line-height:1.55}
+.tabwrap .td b{color:var(--ink-strong)}
+.mock{margin-top:26px;border:1px solid var(--line);border-radius:12px;background:var(--surface);overflow:hidden}
+.mock .bar{height:34px;background:var(--surface-2);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:6px;padding:0 13px}
+.mock .bar i{width:9px;height:9px;border-radius:50%;background:#D7D7E2;display:block}
+.mock .in{padding:18px 20px}
+.mrow{display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid var(--line-soft);font-size:13.5px}
+.mrow:first-child{border-top:0}
+.mrow .nm{font-family:var(--mono);color:var(--ink-strong);font-size:12.5px}
+.mrow .sp{margin-left:auto}
+@media (max-width:900px){.cols{grid-template-columns:1fr}.rail{position:static}.tabwrap{grid-template-columns:1fr;gap:20px}}
+
+
+/* ---- landing, Atlan-shaped ---- */
+body{display:flex;flex-direction:column;min-height:100vh}
+.growmain{flex:1}
+.herowrap{display:grid;grid-template-columns:minmax(0,1.12fr) minmax(0,.88fr);gap:52px;align-items:center;padding:66px 0 54px}
+.herowrap .hl .lede{font-size:18.5px;line-height:1.5;color:var(--muted);max-width:30em;margin-top:18px}
+.herowrap .cta{display:flex;gap:11px;margin-top:30px;flex-wrap:wrap}
+.sectop{max-width:34em}
+.sectop h2{margin-top:13px}
+.sectop p{font-size:16px;color:var(--muted);margin-top:13px;line-height:1.55}
+.steps4{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:0;margin-top:34px;border-top:1px solid var(--line)}
+.st4{padding:22px 24px 24px;border-right:1px solid var(--line-soft);position:relative}
+.st4:last-child{border-right:0}
+.st4 .n{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;color:var(--blue)}
+.st4 h4{font-family:var(--display);font-weight:600;font-size:17.5px;color:var(--ink-strong);letter-spacing:-.018em;margin-top:11px}
+.st4 p{font-size:13.5px;color:var(--muted);line-height:1.5;margin-top:7px}
+.st4::after{content:"";position:absolute;top:-1px;left:0;width:34%;height:2px;background:var(--blue)}
+.obs{background:var(--ink-strong);color:#fff;border-radius:16px;padding:52px 52px 46px;margin-top:8px}
+.obs .eyebrow{color:#8A8CC8}
+.obs h2{color:#fff;font-size:clamp(25px,3.1vw,36px);margin-top:14px;max-width:19em;line-height:1.18}
+.obs h2 em{font-style:normal;color:var(--cyan)}
+.obs .cite{font-family:var(--mono);font-size:11.5px;color:#9A9AB4;margin-top:22px;line-height:1.7}
+.beliefs{display:grid;grid-template-columns:repeat(auto-fit,minmax(268px,1fr));gap:16px;margin-top:34px}
+.bel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:26px 24px}
+.bel{padding:28px 26px 26px}
+.belstat{display:flex;align-items:baseline;gap:11px;padding-bottom:16px;margin-bottom:16px;border-bottom:1px solid var(--line-soft)}
+.belstat .v{font-family:var(--display);font-weight:600;font-size:36px;line-height:1;letter-spacing:-.04em;color:var(--blue);font-variant-numeric:tabular-nums}
+.belstat .l{font-size:12px;color:var(--faint);line-height:1.35;max-width:14em}
+.bel h4{font-family:var(--display);font-weight:600;font-size:21px;color:var(--ink-strong);letter-spacing:-.022em}
+.bel p{font-size:14.5px;color:var(--muted);line-height:1.5;margin-top:8px}
+.bel p b{color:var(--ink-strong);font-weight:600;background:linear-gradient(transparent 64%,var(--cyan) 64%);padding:0 .08em}
+.faqfoot{font-size:14px;color:var(--muted);margin-top:22px}
+.faq{margin-top:30px;border-top:1px solid var(--line)}
+.faq details{border-bottom:1px solid var(--line-soft)}
+.faq summary{list-style:none;cursor:pointer;padding:19px 40px 19px 0;font-family:var(--display);font-weight:600;font-size:17px;color:var(--ink-strong);letter-spacing:-.015em;position:relative}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"+";position:absolute;right:6px;top:17px;font-family:var(--body);font-weight:400;font-size:21px;color:var(--faint)}
+.faq details[open] summary::after{content:"–"}
+.faq p{font-size:14.5px;color:var(--muted);line-height:1.6;padding:0 60px 20px 0;max-width:62em}
+.finalcta{background:var(--blue-soft);border:1px solid var(--blue-line);border-radius:16px;padding:52px 40px;text-align:center;margin-top:8px}
+.finalcta h2{max-width:15em;margin:0 auto}
+.finalcta p{font-size:16px;color:var(--ink);margin:14px auto 26px;max-width:34em}
+
+/* footer, Atlan-shaped */
+footer.bot{border-top:1px solid var(--line);margin-top:74px;padding:48px 0 34px;font-size:13.5px;color:var(--muted);background:var(--surface)}
+.fcols{display:grid;grid-template-columns:1.5fr repeat(3,1fr);gap:34px}
+.fcols h5{font-family:var(--mono);font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--faint);font-weight:500;margin:0 0 13px}
+.fcols ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px}
+.fcols a{color:var(--muted)}
+.fcols a:hover{color:var(--ink-strong);text-decoration:none}
+.fbrand p{font-size:13.5px;color:var(--muted);line-height:1.55;margin-top:12px;max-width:26em}
+.fbot{border-top:1px solid var(--line-soft);margin-top:36px;padding-top:22px;display:flex;gap:18px;flex-wrap:wrap;align-items:center;font-size:12.5px;color:var(--faint)}
+.fbot .sp{margin-left:auto;display:flex;gap:16px}
+.fdisc{font-size:12.5px;color:var(--faint);line-height:1.6;max-width:70em;margin-top:14px}
+@media (max-width:860px){.herowrap{grid-template-columns:1fr;gap:30px;padding:44px 0 36px}.fcols{grid-template-columns:1fr 1fr;gap:26px}.obs{padding:34px 26px}}
+
+/* cleared categories collapse so a clean scan LOOKS clean */
+.catcard.cleared{background:transparent;border-style:dashed}
+.catcard.cleared .cathead{padding:15px 22px}
+.catcard.cleared h3{font-size:17px;color:var(--muted);font-weight:500}
+.resultlede{font-size:17px;color:var(--ink);margin-top:16px;max-width:44em;line-height:1.5}
+.resultlede b{color:var(--ink-strong)}
+
+
+.scanhead{display:flex;align-items:flex-start;gap:26px;padding:52px 0 30px}
+.scanhead .ph{flex:1;min-width:240px;padding-top:4px}
+.scanhead h1{font-size:clamp(32px,4.4vw,50px);line-height:1.02;margin-top:12px}
+.scanhead h1 i{font-style:italic;font-weight:500;color:var(--ink-strong)}
+.scanhead .sub{font-size:16px;color:var(--muted);margin-top:14px}
+.scanhead .btn{margin-top:6px;flex:none}
+.orb.sm{width:84px;height:84px}
+.pick{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin:6px 0 22px;align-items:stretch}
+.pk{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:13px;
+    padding:20px 20px 18px;cursor:pointer;transition:.15s;display:flex;flex-direction:column;min-height:172px}
+.pk .ic{font-size:20px;color:var(--faint);line-height:1;height:24px}
+.pk .t{font-family:var(--display);font-weight:600;font-size:21px;color:var(--ink-strong);letter-spacing:-.022em;margin-top:auto}
+.pk .d{font-size:13px;color:var(--muted);margin-top:6px;line-height:1.45;min-height:38px}
+.pk .tagfree,.pk .tagent{font-family:var(--mono);font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;
+    border-radius:4px;padding:3px 7px;align-self:flex-start;margin-top:13px}
+.pk .tagfree{color:var(--clear);background:#EAF5EF}
+.pk .tagent{color:#7A6410;background:#FBF0C4}
+.pk.off .ic,.pk.off .t{opacity:.72}
+.undernote{font-size:13px;color:var(--faint);margin-top:16px;text-align:center}
+.drop{padding:52px 28px}
+.dropic{font-size:26px;color:var(--faint);margin-bottom:12px}
+.or{margin:26px 0}
+
+
+.catcard.cleared>summary{list-style:none;cursor:pointer}
+.catcard.cleared>summary::-webkit-details-marker{display:none}
+.catcard.cleared>summary .cathead::after{content:"▾";color:var(--faint);font-size:11px;margin-left:10px}
+.catcard.cleared[open]>summary .cathead::after{content:"▴"}
+.catcard.cleared .catbody{border-top:1px solid var(--line-soft)}
+.pagehead{padding:46px 0 6px}
+.pagehead .ph h1{font-family:var(--mono);font-size:clamp(22px,2.9vw,34px);font-weight:500;letter-spacing:-.01em;line-height:1.2;word-break:break-word}
+</style>
+</head><body>
+<header class="top"><div class="wrap topin">
+  <a class="brand" href="/"><span class="sq"></span>Atlan <em>Scan</em></a>
+  <nav class="topnav">
+    <a href="/scan">Scan</a>
+    <a href="/history">Your scans</a><a href="/auth/signout" title="manan@dashverse.ai">Sign out</a>
+  </nav>
+</div></header>
+<main class="growmain">
+
+<div class="wrap">
+  <div class="pagehead">
+    <div class="orb"></div>
+    <div class="ph">
+      <span class="eyebrow">Scan results</span>
+      <h1 style="margin-top:10px">anthropics/skills</h1>
+      <p class="resultlede"><b>8 of 45 checks</b> flagged across <b>20 skills</b>, and 2 of 8 categories came back clear. Every file was readable.</p>
+      <div class="chips">
+        <span class="chip"><span class="lbl">Scanned at</span>2026-09-14 09:08 UTC</span>
+        <span class="chip"><span class="lbl">Engine</span>scan-1.0.0</span>
+        <span class="chip"><span class="lbl">Files</span>419</span>
+        
+      </div>
+    </div>
+  </div>
+  <div class="sevrow"><div class="sev critical zero"><span class="v tnum">0</span><span class="k">critical</span></div><div class="sev high"><span class="v tnum">6</span><span class="k">high</span></div><div class="sev medium"><span class="v tnum">9</span><span class="k">medium</span></div><div class="sev low"><span class="v tnum">24</span><span class="k">low</span></div>
+    <div class="sev info zero"><span class="v tnum">0</span><span class="k">unreadable</span></div>
+  </div>
+  
+  <div class="cols" style="margin-top:26px">
+    <div>
+      <div class="catcard"><div class="cathead">
+      <h3>Prompt injection &amp; instruction hijack</h3>
+      <span class="astbadge">AST01</span>
+      <span class="status flag medium">1 finding</span>
+    </div><div class="catbody"><div class="sub">
+        <div class="sh"><span class="st">Instruction override</span><span class="sc">clear</span></div>
+        <div class="sd">Text telling the agent to ignore the rules it already has.</div>
+        
+      </div><div class="sub">
+        <div class="sh"><span class="st">Role rewrite</span><span class="sc">clear</span></div>
+        <div class="sd">Reassigns who the agent is, for every turn after it loads.</div>
+        
+      </div><div class="sub">
+        <div class="sh"><span class="st">System-prompt impersonation</span><span class="sc">clear</span></div>
+        <div class="sd">Claims the authority of a higher-privilege message.</div>
+        
+      </div><div class="sub">
+        <div class="sh"><span class="st">Concealment instruction</span><span class="sc">clear</span></div>
+        <div class="sd">Tells the agent to act without telling you.</div>
+        
+      </div><div class="sub">
+        <div class="sh"><span class="st">Remote text as instructions</span><span class="sc">clear</span></div>
+        <div class="sd">Treats fetched content as directives rather than data.</div>
+        
+      </div><div class="sub">
+        <div class="sh"><span class="st">Invisible characters</span><span class="sc">clear</span></div>
+        <div class="sd">Zero-width and bidi controls that read differently to a human.</div>
+        
+      </div><div class="sub">
+        <div class="sh"><span class="st">Hidden HTML comment</span><span class="sc hit">1</span></div>
+        <div class="sd">Imperative text invisible when rendered, visible to the model.</div>
+        <div class="card f medium" style="margin-top:12px">
+    <div class="fh"><span class="pill medium">medium</span><span class="ft">Imperative text inside an HTML comment</span><span class="loc">skills/algorithmic-art/templates/viewer.html:2</span></div>
+    <div class="quote">THIS IS A TEMPLATE THAT SHOULD BE USED EVERY TIME AND MODIFIED. WHAT TO KEEP: ✓ Overall structure (header, sidebar, main content) ✓ Anthropic branding (colors, fonts, layout) ✓ Se…</div>
+    <p class="why">Comments are invisible in a rendered README but fully visible to the model. Instructions placed there are aimed at the agent and hidden from the reviewer.</p>
+    <p class="fix"><b>Fix</b>Move it into the visible body, or delete it.</p>
+  </div>
+      </div></div></div><div class="catcard"><div class="cathead">
+      <h3>Untrusted external instructions</h3>
+      <span class="astbadge">AST05</span>
+      <span class="status flag high">5 findings</span>
+    </div><div class="catbody"><div class="sub">
+        <div class="sh"><span class="st">Fetch and execute</span><span class="sc">clear</span></div>
+        <div class="sd">Downloads and runs code in a single unreviewed step.</div>
+        
+      </div><div class="sub">
+        <div class="sh"><span class="st">Evaluated remote content</span><span class="sc">clear</span></div>
+        <div class="sd">Hands remotely fetched text to an interpreter.</div>
+        
+      </div><div class="sub">
+        <div class="sh"><span class="st">Remote instruction file</span><span class="sc">clear</span></div>
+        <div class="sd">Loads its own instructions from a URL you do not control.</div>
+        
+      </div><div class="sub">
+        <div class="sh"><span class="st">Mutable raw source</span><span class="sc hit">5</span></div>
+        <div class="sd">Branch or tag URLs that can change after you reviewed them.</div>
+        <div class="card f high" style="margin-top:12px">
+    <div class="fh"><span class="pill high">high</span><span class="ft">Pulls from a mutable raw source</span><span class="loc">skills/mcp-builder/SKILL.md:61</span></div>
+    <div class="quote">- **TypeScript SDK**: Use WebFetch to load `https://raw.githubusercontent.com/modelcontextprotocol/typescript-sdk/main/README.md`</div>
+    <p class="why">A branch or tag URL returns whatever is there today. The version you reviewed and the version you run are not guaranteed to be the same file.</p>
+    <p class="fix"><b>Fix</b>Pin the URL to a full commit SHA, or vendor the file into this repo.</p>
+  </div><div class="card f high" style="margin-top:12px">
+    <div class="fh"><span class="pill high">high</span><span class="ft">Pulls from a mutable raw source</span><span class="loc">skills/mcp-builder/SKILL.md:65</span></div>
+    <div class="quote">- **Python SDK**: Use WebFetch to load `https://raw.githubusercontent.com/modelcontextprotocol/python-sdk/main/README.md`</div>
+    <p class="why">A branch or tag URL returns whatever is there today. The version you reviewed and the version you run are not guaranteed to be the same file.</p>
+    <p class="fix"><b>Fix</b>Pin the URL to a full commit SHA, or vendor the file into this repo.</p>
+  </div><div class="card f high" style="margin-top:12px">
+    <div class="fh"><span class="pill high">high</span><span class="ft">Pulls from a mutable raw source</span><span class="loc">skills/mcp-builder/SKILL.md:212</span></div>
+    <div class="quote">- **Python SDK**: Fetch from `https://raw.githubusercontent.com/modelcontextprotocol/python-sdk/main/README.md`</div>
+    <p class="why">A branch or tag URL returns whatever is there today. The version you reviewed and the version you run are not guaranteed to be the same file.</p>
+    <p class="fix"><b>Fix</b>Pin the URL to a full commit SHA, or vendor the file into this repo.</p>
+  </div><div class="card f high" style="margin-top:12px">
+    <div class="fh"><span class="pill high">high</span><span class="ft">Pulls from a mutable raw source</span><span class="loc">skills/mcp-builder/SKILL.md:213</span></div>
+    <div class="quote">- **TypeScript SDK**: Fetch from `https://raw.githubusercontent.com/modelcontextprotocol/typescript-sdk/main/README.md`</div>
+    <p class="why">A branch or tag URL returns whatever is there today. The version you reviewed and the version you run are not guaranteed to be the same file.</p>
+    <p class="fix"><b>Fix</b>Pin the URL to a full commit SHA, or vendor the file into this repo.</p>
+  </div><div class="card f high" style="margin-top:12px">
+    <div class="fh"><span class="pill high">high</span><span class="ft">Pulls from a mutable raw source</span><span class="loc">skills/mcp-builder/reference/python_mcp_server.md:43</span></div>
+    <div class="quote">`https://raw.githubusercontent.com/modelcontextprotocol/python-sdk/main/README.md`</div>
+    <p class="why">A branch or tag URL returns whatever is there today. The version you reviewed and the version you run are not guaranteed to be the same file.</p>
+    <p class="fix"><b>Fix</b>Pin the URL to a full commit SHA, or vendor the file into this repo.</p>
+  </div>
+      </div><div class="sub">
+        <div class="sh"><span class="st">Opaque host</span><span class="sc">clear</span></div>
+        <div class="sd">Paste sites and shortened links that hide what they serve.</div>
+        
+      </div></div></div><div class="catcard"><div class="cathead">
+      <h3>Supply chain &amp; drift</h3>
+      <span class="astbadge">AST02</span><span class="astbadge">AST07</span>
+      <span class="status flag medium">2 findings</span>
+    </div><div class="catbody"><div class="sub">
+        <div class="sh"><span class="st">Off-registry install</span><span class="sc">clear</span></div>
+        <div class="sd">Installs from a git URL or tarball rather than a registry.</div>
+        
+      </div><div class="sub">
+        <div class="sh"><span class="st">Unpinned dependency</span><span class="sc hit">2</span></div>
+        <div class="sd">No version, so you get whatever is newest when it runs.</div>
+        <div class="card f medium" style="margin-top:12px">
+    <div class="fh"><span class="pill medium">medium</span><span class="ft">Unpinned dependency: pytesseract</span><span class="loc">skills/pdf/SKILL.md:235</span></div>
+    <div class="quote"># Requires: pip install pytesseract pdf2image</div>
+    <p class="why">Without a version, you get whatever is newest when the command runs. A package taken over tomorrow lands on your machine tomorrow.</p>
+    <p class="fix"><b>Fix</b>Pin it — pytesseract@&lt;version&gt; for npm, pytesseract==&lt;version&gt; for pip.</p>
+  </div><div class="card f medium" style="margin-top:12px">
+    <div class="fh"><span class="pill medium">medium</span><span class="ft">Unpinned dependency: pillow</span><span class="loc">skills/slack-gif-creator/SKILL.md:253</span></div>
+    <div class="quote">pip install pillow imageio numpy</div>
+    <p class="why">Without a version, you get whatever is newest when the command runs. A package taken over tomorrow lands on your machine tomorrow.</p>
+    <p class="fix"><b>Fix</b>Pin it — pillow@&lt;version&gt; for npm, pillow==&lt;version&gt; for pip.</p>
+  </div>
+      </div><div class="sub">
+        <div class="sh"><span class="st">Typosquat shape</span><span class="sc">clear</span></div>
+        <div class="sd">A package name one edit away from a popular one.</div>
+        
+      </div><div class="sub">
+        <div class="sh"><span class="st">Shipped binary</span><span class="sc">clear</span></div>
+        <div class="sd">A compiled artifact nobody reviews in a pull request.</div>
+        
+      </div><div class="sub">
+        <div class="sh"><span class="st">Marked executable</span><span class="sc">clear</span></div>
+        <div class="sd">The last step before downloaded code can run.</div>
+        
+      </div><div class="sub">
+        <div class="sh"><span class="st">Global install</span><span class="sc">clear</span></div>
+        <div class="sd">Changes the machine, not just the project.</div>
+        
+      </div></div></div><details class="catcard cleared"><summary><div class="cathead">
+      <h3>Over-privilege</h3>
+      <span class="astbadge">AST03</span>
+      <span class="status clear">✓ cleared</span>
+    </div></summary>
+      <div class="catbody"><div class="sub">
+        <div class="sh"><span class="st">Wildcard tool grant</span><span class="sc">clear</span></div>
+        <div class="sd">Every tool the agent has, with no prompt before use.</div>
+        
+      </div><div class="sub">
+        <div class="sh"><span class="st">Unconstrained shell</span><span class="sc">clear</span></div>
+        <div class="sd">Bash with no command filter is arbitrary execution.</div>
+        
+      </div><div class="sub">
+        <div class="sh"><span class="st">Permission bypass</span><span class="sc">clear</span></div>
+        <div class="sd">Asks you to disable the last place a human can intervene.</div>
+        
+      </div><div class="sub">
+        <div class="sh"><span class="st">Shell + network + write</span><span class="sc">clear</span></div>
+        <div class="sd">Individually fine; together a complete path in and out.</div>
+        
+      </div><div class="sub">
+        <div class="sh"><span class="st">Root requested</span><span class="sc">clear</span></div>
+        <div class="sd">Turns a mistake in a skill into a mistake on the machine.</div>
+        
+      </div><div class="sub">
+        <div class="sh"><span class="st">Writes outside the workspace</span><span class="sc">clear</span></div>
+        <div class="sd">Changes that outlive the project and the skill.</div>
+        
+      </div></div></details><div class="catcard"><div class="cathead">
+      <h3>Data-exfiltration paths</h3>
+      <span class="astbadge">AST05</span>
+      <span class="status flag medium">6 findings</span>
+    </div><div class="catbody"><div class="sub">
+        <div class="sh"><span class="st">Credential read + route out</span><span class="sc">clear</span></div>
+        <div class="sd">Reads secrets and has somewhere to send them. The pairing is the finding.</div>
+        
+      </div><div class="sub">
+        <div class="sh"><span class="st">Codebase upload</span><span class="sc">clear</span></div>
+        <div class="sd">Archives the project, then sends the archive.</div>
+        
+      </div><div class="sub">
+        <div class="sh"><span class="st">Committed credential</span><span class="sc">clear</span></div>
+        <div class="sd">A live key in a published file is a key in everyone&#39;s hands.</div>
+        
+      </div><div class="sub">
+        <div class="sh"><span class="st">Collector endpoint</span><span class="sc">clear</span></div>
+        <div class="sd">Hosts that exist to receive arbitrary data from anywhere.</div>
+        
+      </div><div class="sub">
+        <div class="sh"><span class="st">Credential access</span><span class="sc hit">6</span></div>
+        <div class="sd">Touches secrets. Listed so a later outbound call is a change you notice.</div>
+        <div class="card f medium" style="margin-top:12px">
+    <div class="fh"><span class="pill medium">medium</span><span class="ft">Touches credential material</span><span class="loc">skills/claude-api/curl/examples.md:18</span></div>
+    <div class="quote">-H &quot;x-api-key: $ANTHROPIC_API_KEY&quot; \</div>
+    <p class="why">On its own this may be exactly what the skill is for. It is listed so you know this skill sees secrets, and so a later change that adds an outbound call is a change you notice.</p>
+    <p class="fix"><b>Fix</b>Confirm the skill needs it. If it does, keep network access out of this skill.</p>
+  </div><div class="card f medium" style="margin-top:12px">
+    <div class="fh"><span class="pill medium">medium</span><span class="ft">Touches credential material</span><span class="loc">skills/docx/scripts/office/soffice.py:28</span></div>
+    <div class="quote">env = os.environ.copy()</div>
+    <p class="why">On its own this may be exactly what the skill is for. It is listed so you know this skill sees secrets, and so a later change that adds an outbound call is a change you notice.</p>
+    <p class="fix"><b>Fix</b>Confirm the skill needs it. If it does, keep network access out of this skill.</p>
+  </div><div class="card f medium" style="margin-top:12px">
+    <div class="fh"><span class="pill medium">medium</span><span class="ft">Touches credential material</span><span class="loc">skills/mcp-builder/reference/node_mcp_server.md:707</span></div>
+    <div class="quote">if (!process.env.EXAMPLE_API_KEY) {</div>
+    <p class="why">On its own this may be exactly what the skill is for. It is listed so you know this skill sees secrets, and so a later change that adds an outbound call is a change you notice.</p>
+    <p class="fix"><b>Fix</b>Confirm the skill needs it. If it does, keep network access out of this skill.</p>
+  </div><div class="card f medium" style="margin-top:12px">
+    <div class="fh"><span class="pill medium">medium</span><span class="ft">Touches credential material</span><span class="loc">skills/pptx/scripts/office/soffice.py:28</span></div>
+    <div class="quote">env = os.environ.copy()</div>
+    <p class="why">On its own this may be exactly what the skill is for. It is listed so you know this skill sees secrets, and so a later change that adds an outbound call is a change you notice.</p>
+    <p class="fix"><b>Fix</b>Confirm the skill needs it. If it does, keep network access out of this skill.</p>
+  </div><div class="card f medium" style="margin-top:12px">
+    <div class="fh"><span class="pill medium">medium</span><span class="ft">Touches credential material</span><span class="loc">skills/skill-creator/scripts/improve_description.py:33</span></div>
+    <div class="quote">env = {k: v for k, v in os.environ.items() if k != &quot;CLAUDECODE&quot;}</div>
+    <p class="why">On its own this may be exactly what the skill is for. It is listed so you know this skill sees secrets, and so a later change that adds an outbound call is a change you notice.</p>
+    <p class="fix"><b>Fix</b>Confirm the skill needs it. If it does, keep network access out of this skill.</p>
+  </div><div class="card f medium" style="margin-top:12px">
+    <div class="fh"><span class="pill medium">medium</span><span class="ft">Touches credential material</span><span class="loc">skills/xlsx/scripts/office/soffice.py:28</span></div>
+    <div class="quote">env = os.environ.copy()</div>
+    <p class="why">On its own this may be exactly what the skill is for. It is listed so you know this skill sees secrets, and so a later change that adds an outbound call is a change you notice.</p>
+    <p class="fix"><b>Fix</b>Confirm the skill needs it. If it does, keep network access out of this skill.</p>
+  </div>
+      </div></div></div><div class="catcard"><div class="cathead">
+      <h3>Hidden &amp; unreadable content</h3>
+      <span class="astbadge">AST08</span>
+      <span class="status flag high">16 findings</span>
+    </div><div class="catbody"><div class="sub">
+        <div class="sh"><span class="st">Encoded blob</span><span class="sc">clear</span></div>
+        <div class="sd">Content no reviewer could have read, inside an instruction file.</div>
+        
+      </div><div class="sub">
+        <div class="sh"><span class="st">Runtime decoding</span><span class="sc hit">1</span></div>
+        <div class="sd">Produces content that never existed in reviewable form.</div>
+        <div class="card f high" style="margin-top:12px">
+    <div class="fh"><span class="pill high">high</span><span class="ft">Decodes content at run time</span><span class="loc">skills/skill-creator/eval-viewer/viewer.html:832</span></div>
+    <div class="quote">const raw = Uint8Array.from(atob(b64Data), c =&gt; c.charCodeAt(0));</div>
+    <p class="why">Whatever this produces was never reviewable in source form. Decoding at run time is how a payload stays invisible until the moment it runs.</p>
+    <p class="fix"><b>Fix</b>Inline the decoded content so it can be read and diffed.</p>
+  </div>
+      </div><div class="sub">
+        <div class="sh"><span class="st">Skipped directory</span><span class="sc">clear</span></div>
+        <div class="sd">Runnable code parked where review and scanners do not look.</div>
+        
+      </div><div class="sub">
+        <div class="sh"><span class="st">Unreadable file</span><span class="sc">clear</span></div>
+        <div class="sd">Reported, never passed over. What we cannot read, we cannot clear.</div>
+        
+      </div><div class="sub">
+        <div class="sh"><span class="st">Bulk reference</span><span class="sc hit">15</span></div>
+        <div class="sd">A file too large for anyone to have read end to end.</div>
+        <div class="card f low" style="margin-top:12px">
+    <div class="fh"><span class="pill low">low</span><span class="ft">Reference file of 1,873 lines</span><span class="loc">skills/claude-api/shared/model-migration.md</span></div>
+    <div class="quote">skills/claude-api/shared/model-migration.md — 1,873 lines, 244,863 bytes</div>
+    <p class="why">A file this size was almost certainly never read end to end by the author, the reviewer, or you. It is a good place for something to sit unnoticed.</p>
+    <p class="fix"><b>Fix</b>Split it, or state in the SKILL.md what the file contains and when the agent should load it.</p>
+  </div><div class="card f low" style="margin-top:12px">
+    <div class="fh"><span class="pill low">low</span><span class="ft">Reference file of 1,500 lines</span><span class="loc">skills/docx/scripts/office/schemas/ISO-IEC29500-4_2016/dml-chart.xsd</span></div>
+    <div class="quote">skills/docx/scripts/office/schemas/ISO-IEC29500-4_2016/dml-chart.xsd — 1,500 lines, 74,984 bytes</div>
+    <p class="why">A file this size was almost certainly never read end to end by the author, the reviewer, or you. It is a good place for something to sit unnoticed.</p>
+    <p class="fix"><b>Fix</b>Split it, or state in the SKILL.md what the file contains and when the agent should load it.</p>
+  </div><div class="card f low" style="margin-top:12px">
+    <div class="fh"><span class="pill low">low</span><span class="ft">Reference file of 1,086 lines</span><span class="loc">skills/docx/scripts/office/schemas/ISO-IEC29500-4_2016/dml-diagram.xsd</span></div>
+    <div class="quote">skills/docx/scripts/office/schemas/ISO-IEC29500-4_2016/dml-diagram.xsd — 1,086 lines, 51,302 bytes</div>
+    <p class="why">A file this size was almost certainly never read end to end by the author, the reviewer, or you. It is a good place for something to sit unnoticed.</p>
+    <p class="fix"><b>Fix</b>Split it, or state in the SKILL.md what the file contains and when the agent should load it.</p>
+  </div><div class="card f low" style="margin-top:12px">
+    <div class="fh"><span class="pill low">low</span><span class="ft">Reference file of 3,082 lines</span><span class="loc">skills/docx/scripts/office/schemas/ISO-IEC29500-4_2016/dml-main.xsd</span></div>
+    <div class="quote">skills/docx/scripts/office/schemas/ISO-IEC29500-4_2016/dml-main.xsd — 3,082 lines, 152,039 bytes</div>
+    <p class="why">A file this size was almost certainly never read end to end by the author, the reviewer, or you. It is a good place for something to sit unnoticed.</p>
+    <p class="fix"><b>Fix</b>Split it, or state in the SKILL.md what the file contains and when the agent should load it.</p>
+  </div><div class="card f low" style="margin-top:12px">
+    <div class="fh"><span class="pill low">low</span><span class="ft">Reference file of 1,677 lines</span><span class="loc">skills/docx/scripts/office/schemas/ISO-IEC29500-4_2016/pml.xsd</span></div>
+    <div class="quote">skills/docx/scripts/office/schemas/ISO-IEC29500-4_2016/pml.xsd — 1,677 lines, 83,612 bytes</div>
+    <p class="why">A file this size was almost certainly never read end to end by the author, the reviewer, or you. It is a good place for something to sit unnoticed.</p>
+    <p class="fix"><b>Fix</b>Split it, or state in the SKILL.md what the file contains and when the agent should load it.</p>
+  </div><div class="card f low" style="margin-top:12px">
+    <div class="fh"><span class="pill low">low</span><span class="ft">Reference file of 970 lines</span><span class="loc">skills/mcp-builder/reference/node_mcp_server.md</span></div>
+    <div class="quote">skills/mcp-builder/reference/node_mcp_server.md — 970 lines, 28,550 bytes</div>
+    <p class="why">A file this size was almost certainly never read end to end by the author, the reviewer, or you. It is a good place for something to sit unnoticed.</p>
+    <p class="fix"><b>Fix</b>Split it, or state in the SKILL.md what the file contains and when the agent should load it.</p>
+  </div><div class="card f low" style="margin-top:12px">
+    <div class="fh"><span class="pill low">low</span><span class="ft">Reference file of 1,500 lines</span><span class="loc">skills/pptx/scripts/office/schemas/ISO-IEC29500-4_2016/dml-chart.xsd</span></div>
+    <div class="quote">skills/pptx/scripts/office/schemas/ISO-IEC29500-4_2016/dml-chart.xsd — 1,500 lines, 74,984 bytes</div>
+    <p class="why">A file this size was almost certainly never read end to end by the author, the reviewer, or you. It is a good place for something to sit unnoticed.</p>
+    <p class="fix"><b>Fix</b>Split it, or state in the SKILL.md what the file contains and when the agent should load it.</p>
+  </div><div class="card f low" style="margin-top:12px">
+    <div class="fh"><span class="pill low">low</span><span class="ft">Reference file of 1,086 lines</span><span class="loc">skills/pptx/scripts/office/schemas/ISO-IEC29500-4_2016/dml-diagram.xsd</span></div>
+    <div class="quote">skills/pptx/scripts/office/schemas/ISO-IEC29500-4_2016/dml-diagram.xsd — 1,086 lines, 51,302 bytes</div>
+    <p class="why">A file this size was almost certainly never read end to end by the author, the reviewer, or you. It is a good place for something to sit unnoticed.</p>
+    <p class="fix"><b>Fix</b>Split it, or state in the SKILL.md what the file contains and when the agent should load it.</p>
+  </div><div class="card f low" style="margin-top:12px">
+    <div class="fh"><span class="pill low">low</span><span class="ft">Reference file of 3,082 lines</span><span class="loc">skills/pptx/scripts/office/schemas/ISO-IEC29500-4_2016/dml-main.xsd</span></div>
+    <div class="quote">skills/pptx/scripts/office/schemas/ISO-IEC29500-4_2016/dml-main.xsd — 3,082 lines, 152,039 bytes</div>
+    <p class="why">A file this size was almost certainly never read end to end by the author, the reviewer, or you. It is a good place for something to sit unnoticed.</p>
+    <p class="fix"><b>Fix</b>Split it, or state in the SKILL.md what the file contains and when the agent should load it.</p>
+  </div><div class="card f low" style="margin-top:12px">
+    <div class="fh"><span class="pill low">low</span><span class="ft">Reference file of 1,677 lines</span><span class="loc">skills/pptx/scripts/office/schemas/ISO-IEC29500-4_2016/pml.xsd</span></div>
+    <div class="quote">skills/pptx/scripts/office/schemas/ISO-IEC29500-4_2016/pml.xsd — 1,677 lines, 83,612 bytes</div>
+    <p class="why">A file this size was almost certainly never read end to end by the author, the reviewer, or you. It is a good place for something to sit unnoticed.</p>
+    <p class="fix"><b>Fix</b>Split it, or state in the SKILL.md what the file contains and when the agent should load it.</p>
+  </div><div class="card f low" style="margin-top:12px">
+    <div class="fh"><span class="pill low">low</span><span class="ft">Reference file of 1,326 lines</span><span class="loc">skills/skill-creator/eval-viewer/viewer.html</span></div>
+    <div class="quote">skills/skill-creator/eval-viewer/viewer.html — 1,326 lines, 44,998 bytes</div>
+    <p class="why">A file this size was almost certainly never read end to end by the author, the reviewer, or you. It is a good place for something to sit unnoticed.</p>
+    <p class="fix"><b>Fix</b>Split it, or state in the SKILL.md what the file contains and when the agent should load it.</p>
+  </div><div class="card f low" style="margin-top:12px">
+    <div class="fh"><span class="pill low">low</span><span class="ft">Reference file of 1,500 lines</span><span class="loc">skills/xlsx/scripts/office/schemas/ISO-IEC29500-4_2016/dml-chart.xsd</span></div>
+    <div class="quote">skills/xlsx/scripts/office/schemas/ISO-IEC29500-4_2016/dml-chart.xsd — 1,500 lines, 74,984 bytes</div>
+    <p class="why">A file this size was almost certainly never read end to end by the author, the reviewer, or you. It is a good place for something to sit unnoticed.</p>
+    <p class="fix"><b>Fix</b>Split it, or state in the SKILL.md what the file contains and when the agent should load it.</p>
+  </div><div class="card f low" style="margin-top:12px">
+    <div class="fh"><span class="pill low">low</span><span class="ft">Reference file of 1,086 lines</span><span class="loc">skills/xlsx/scripts/office/schemas/ISO-IEC29500-4_2016/dml-diagram.xsd</span></div>
+    <div class="quote">skills/xlsx/scripts/office/schemas/ISO-IEC29500-4_2016/dml-diagram.xsd — 1,086 lines, 51,302 bytes</div>
+    <p class="why">A file this size was almost certainly never read end to end by the author, the reviewer, or you. It is a good place for something to sit unnoticed.</p>
+    <p class="fix"><b>Fix</b>Split it, or state in the SKILL.md what the file contains and when the agent should load it.</p>
+  </div><div class="card f low" style="margin-top:12px">
+    <div class="fh"><span class="pill low">low</span><span class="ft">Reference file of 3,082 lines</span><span class="loc">skills/xlsx/scripts/office/schemas/ISO-IEC29500-4_2016/dml-main.xsd</span></div>
+    <div class="quote">skills/xlsx/scripts/office/schemas/ISO-IEC29500-4_2016/dml-main.xsd — 3,082 lines, 152,039 bytes</div>
+    <p class="why">A file this size was almost certainly never read end to end by the author, the reviewer, or you. It is a good place for something to sit unnoticed.</p>
+    <p class="fix"><b>Fix</b>Split it, or state in the SKILL.md what the file contains and when the agent should load it.</p>
+  </div><div class="card f low" style="margin-top:12px">
+    <div class="fh"><span class="pill low">low</span><span class="ft">Reference file of 1,677 lines</span><span class="loc">skills/xlsx/scripts/office/schemas/ISO-IEC29500-4_2016/pml.xsd</span></div>
+    <div class="quote">skills/xlsx/scripts/office/schemas/ISO-IEC29500-4_2016/pml.xsd — 1,677 lines, 83,612 bytes</div>
+    <p class="why">A file this size was almost certainly never read end to end by the author, the reviewer, or you. It is a good place for something to sit unnoticed.</p>
+    <p class="fix"><b>Fix</b>Split it, or state in the SKILL.md what the file contains and when the agent should load it.</p>
+  </div>
+      </div></div></div><div class="catcard"><div class="cathead">
+      <h3>Metadata hygiene</h3>
+      <span class="astbadge">AST04</span>
+      <span class="status flag low">9 findings</span>
+    </div><div class="catbody"><div class="sub">
+        <div class="sh"><span class="st">Missing frontmatter</span><span class="sc">clear</span></div>
+        <div class="sd">No name or trigger, so it fires on everything or nothing.</div>
+        
+      </div><div class="sub">
+        <div class="sh"><span class="st">Missing name</span><span class="sc">clear</span></div>
+        <div class="sd">Nothing to reference, pin or report against.</div>
+        
+      </div><div class="sub">
+        <div class="sh"><span class="st">Missing description</span><span class="sc">clear</span></div>
+        <div class="sd">The only thing the agent sees when deciding to load it.</div>
+        
+      </div><div class="sub">
+        <div class="sh"><span class="st">Unsafe YAML</span><span class="sc">clear</span></div>
+        <div class="sd">Tags, anchors and merge keys, parsed before anyone trusts the skill.</div>
+        
+      </div><div class="sub">
+        <div class="sh"><span class="st">Description over budget</span><span class="sc">clear</span></div>
+        <div class="sd">Past 1,536 characters the trigger wording is silently cut.</div>
+        
+      </div><div class="sub">
+        <div class="sh"><span class="st">Keyword-stuffed description</span><span class="sc hit">8</span></div>
+        <div class="sd">Fires on prompts it has no business in, on every turn.</div>
+        <div class="card f low" style="margin-top:12px">
+    <div class="fh"><span class="pill low">low</span><span class="ft">Description reads as a keyword list</span><span class="loc">skills/claude-api/SKILL.md:3</span></div>
+    <div class="quote">|- Reference for the Claude API / Anthropic SDK — model ids, pricing, params, streaming, tool use, MCP, agents, caching, token counting, model migration. TRIGGE</div>
+    <p class="why">Stuffing trigger words makes the skill fire on prompts it has no business in — which costs context on every turn and crowds out the skill that should have fired.</p>
+    <p class="fix"><b>Fix</b>Write one or two sentences a human would recognise. Precision beats coverage.</p>
+  </div><div class="card f low" style="margin-top:12px">
+    <div class="fh"><span class="pill low">low</span><span class="ft">Description reads as a keyword list</span><span class="loc">skills/discernment-nudge/SKILL.md:3</span></div>
+    <div class="quote">&gt; After you give a substantive answer or draft that the user may act on — advice or recommendations, drafted artifacts such as goals, plans, pitches, proposals,</div>
+    <p class="why">Stuffing trigger words makes the skill fire on prompts it has no business in — which costs context on every turn and crowds out the skill that should have fired.</p>
+    <p class="fix"><b>Fix</b>Write one or two sentences a human would recognise. Precision beats coverage.</p>
+  </div><div class="card f low" style="margin-top:12px">
+    <div class="fh"><span class="pill low">low</span><span class="ft">Description reads as a keyword list</span><span class="loc">skills/doc-coauthoring/SKILL.md:3</span></div>
+    <div class="quote">Guide users through a structured workflow for co-authoring documentation. Use when user wants to write documentation, proposals, technical specs, decision docs,</div>
+    <p class="why">Stuffing trigger words makes the skill fire on prompts it has no business in — which costs context on every turn and crowds out the skill that should have fired.</p>
+    <p class="fix"><b>Fix</b>Write one or two sentences a human would recognise. Precision beats coverage.</p>
+  </div><div class="card f low" style="margin-top:12px">
+    <div class="fh"><span class="pill low">low</span><span class="ft">Description reads as a keyword list</span><span class="loc">skills/docx/SKILL.md:3</span></div>
+    <div class="quote">Use this skill whenever the user wants to create, read, edit, or manipulate Word documents (.docx files) or Word templates (.dotx files). Triggers include: any</div>
+    <p class="why">Stuffing trigger words makes the skill fire on prompts it has no business in — which costs context on every turn and crowds out the skill that should have fired.</p>
+    <p class="fix"><b>Fix</b>Write one or two sentences a human would recognise. Precision beats coverage.</p>
+  </div><div class="card f low" style="margin-top:12px">
+    <div class="fh"><span class="pill low">low</span><span class="ft">Description reads as a keyword list</span><span class="loc">skills/internal-comms/SKILL.md:3</span></div>
+    <div class="quote">A set of resources to help me write all kinds of internal communications, using the formats that my company likes to use. Claude should use this skill whenever</div>
+    <p class="why">Stuffing trigger words makes the skill fire on prompts it has no business in — which costs context on every turn and crowds out the skill that should have fired.</p>
+    <p class="fix"><b>Fix</b>Write one or two sentences a human would recognise. Precision beats coverage.</p>
+  </div><div class="card f low" style="margin-top:12px">
+    <div class="fh"><span class="pill low">low</span><span class="ft">Description reads as a keyword list</span><span class="loc">skills/pdf/SKILL.md:3</span></div>
+    <div class="quote">Use this skill whenever the user wants to do anything with PDF files. This includes reading or extracting text/tables from PDFs, combining or merging multiple P</div>
+    <p class="why">Stuffing trigger words makes the skill fire on prompts it has no business in — which costs context on every turn and crowds out the skill that should have fired.</p>
+    <p class="fix"><b>Fix</b>Write one or two sentences a human would recognise. Precision beats coverage.</p>
+  </div><div class="card f low" style="margin-top:12px">
+    <div class="fh"><span class="pill low">low</span><span class="ft">Description reads as a keyword list</span><span class="loc">skills/pptx/SKILL.md:3</span></div>
+    <div class="quote">Use this skill any time a .pptx or .potx file is involved in any way — as input, output, or both. This includes: creating slide decks, pitch decks, or presentat</div>
+    <p class="why">Stuffing trigger words makes the skill fire on prompts it has no business in — which costs context on every turn and crowds out the skill that should have fired.</p>
+    <p class="fix"><b>Fix</b>Write one or two sentences a human would recognise. Precision beats coverage.</p>
+  </div><div class="card f low" style="margin-top:12px">
+    <div class="fh"><span class="pill low">low</span><span class="ft">Description reads as a keyword list</span><span class="loc">skills/skill-creator/SKILL.md:3</span></div>
+    <div class="quote">Create new skills, modify and improve existing skills, and measure skill performance. Use when users want to create a skill from scratch, edit, or optimize an e</div>
+    <p class="why">Stuffing trigger words makes the skill fire on prompts it has no business in — which costs context on every turn and crowds out the skill that should have fired.</p>
+    <p class="fix"><b>Fix</b>Write one or two sentences a human would recognise. Precision beats coverage.</p>
+  </div>
+      </div><div class="sub">
+        <div class="sh"><span class="st">Body over the line limit</span><span class="sc hit">1</span></div>
+        <div class="sd">Expensive to load and unlikely to have been read in full.</div>
+        <div class="card f low" style="margin-top:12px">
+    <div class="fh"><span class="pill low">low</span><span class="ft">SKILL.md body is 565 lines</span><span class="loc">skills/claude-api/SKILL.md:500</span></div>
+    <div class="quote">-&gt; Read `{lang}/claude-api/README.md` + `shared/tool-use-concepts.md` (conceptual foundations: function calling, code execution, memory, structured outputs) + `{lang}/claude-api/t…</div>
+    <p class="why">The documented ceiling is 500 lines. Past that the file is both expensive to load and unlikely to have been read in full by anyone reviewing it.</p>
+    <p class="fix"><b>Fix</b>Move detail into reference files the skill loads on demand.</p>
+  </div>
+      </div></div></div><details class="catcard cleared"><summary><div class="cathead">
+      <h3>Library-level findings</h3>
+      <span class="astbadge">AST09</span>
+      <span class="status clear">✓ cleared</span>
+    </div></summary>
+      <div class="catbody"><div class="sub">
+        <div class="sh"><span class="st">Trigger collision</span><span class="sc">clear</span></div>
+        <div class="sd">Two skills competing for the same prompts; which fires is arbitrary.</div>
+        
+      </div><div class="sub">
+        <div class="sh"><span class="st">Duplicate skill</span><span class="sc">clear</span></div>
+        <div class="sd">Two copies drift apart and only one of them gets fixed.</div>
+        
+      </div><div class="sub">
+        <div class="sh"><span class="st">Listing cost</span><span class="sc">clear</span></div>
+        <div class="sd">What you pay on every turn for skills that never fire.</div>
+        
+      </div><div class="sub">
+        <div class="sh"><span class="st">Orphan reference</span><span class="sc">clear</span></div>
+        <div class="sd">Points at a file that is not there; the agent fails quietly.</div>
+        
+      </div></div></details>
+      <div class="card" style="padding:24px 26px;margin-top:22px">
+    <div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap">
+      <h3 style="font-size:19px">Publish this report</h3>
+      <form method="POST" action="/r/W1cesnDeUcQJ/share" style="margin-left:auto">
+        <input type="hidden" name="public" value="1">
+        <button class="btn btn-primary" type="submit">Publish</button>
+      </form>
+    </div>
+    <p class="muted" style="font-size:14px;margin-top:9px;max-width:52em">
+      Publishing makes a read-only copy of this report public at a link you can share. The badge states what was scanned and when — never that anything is safe.
+    </p>
+    
+  </div>
+      <div class="ribbon" data-lock="more" style="cursor:pointer">
+    <div class="lk">🔒</div>
+    <h3>More in this scan</h3>
+    <p>Re-scan when a skill changes, every teammate's skills in one inventory, and a policy gate before anything installs. These ship with Atlan Registry.</p>
+    <button class="btn btn-primary" style="margin-top:18px" data-lock="more">See what's included</button>
+  </div>
+    </div>
+    <aside class="rail">
+    <div class="rc" style="padding:0"><a class="btn btn-ghost" style="width:100%;border:0;justify-content:center;padding:17px" href="/scan">↻ Run new scan</a></div>
+    <div class="rc">
+      <h4>Metadata</h4>
+      <p>Read from the files you uploaded</p>
+      <div style="margin-top:14px"><div class="kv"><span>Skills</span><b>20</b></div>
+       <div class="kv"><span>Files read</span><b>419</b></div>
+       <div class="kv"><span>Could not read</span><b>0</b></div>
+       <div class="kv"><span>Images &amp; other assets</span><b>56</b></div>
+       <div class="kv"><span>Permission findings</span><b>0</b></div>
+       <div class="kv"><span>Listing metadata</span><b>9,711c</b></div>
+       <div class="kv"><span>Colliding triggers</span><b>0</b></div></div>
+    </div>
+    <div class="rc">
+      <h4>Report skeleton</h4>
+      <p>The same 45 checks run in the same order every time, so two reports are comparable. Pattern analysis, no model in the loop.</p>
+      <p style="margin-top:10px">This is not a certificate. We report what is visible in the text, and what we could not read.</p>
+    </div>
+  </aside>
+  </div>
+</div>
+<div class="mask" id="mask">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="mtitle">
+    <button class="x" id="mx" aria-label="Close">×</button>
+    <div class="lk">🔒</div>
+    <h3 id="mtitle">This is a Registry feature</h3>
+    <p id="mbody">MCP, plugin and sub-agent scanning ship with Atlan Registry. Tell us where to send it.</p>
+    <form method="POST" action="/api/interest">
+      <input type="hidden" name="feature" id="mfeature" value="">
+      <input type="text" name="first" placeholder="First name" required>
+      <input type="text" name="last" placeholder="Last name" required>
+      <input type="email" name="email" placeholder="Work email" required>
+      <label class="ck"><input type="checkbox" name="consent" required style="width:auto;margin:3px 0 0">
+        I'd like to hear about Atlan Registry.</label>
+      <button class="sub2" type="submit">Submit</button>
+    </form>
+    <p class="fine">One email when it ships. Nothing else.</p>
+  </div>
+</div>
+</main>
+<footer class="bot"><div class="wrap">
+  <div class="fcols">
+    <div class="fbrand">
+      <a class="brand" href="/"><span class="sq"></span>Atlan <em>Scan</em></a>
+      <p>Read what is actually in the skills, MCPs and plugins your agents install — before they run.</p>
+    </div>
+    <div>
+      <h5>Scan</h5>
+      <ul>
+        <li><a href="/scan">Scan a folder</a></li>
+        <li><a href="/scan">Scan a public repo</a></li>
+        <li><a href="/history">Your scans</a></li>
+        <li><a href="/#faq">What gets checked</a></li>
+      </ul>
+    </div>
+    <div>
+      <h5>Coming with Registry</h5>
+      <ul>
+        <li><a href="/scan">MCP servers</a></li>
+        <li><a href="/scan">Plugins</a></li>
+        <li><a href="/scan">Sub-agents</a></li>
+        <li><a href="/scan">Continuous re-scan</a></li>
+      </ul>
+    </div>
+    <div>
+      <h5>Reference</h5>
+      <ul>
+        <li><a href="https://owasp.org/www-project-agentic-skills-top-10/" rel="noreferrer">OWASP Agentic Skills Top 10</a></li>
+        <li><a href="/#beliefs">Why we never say safe</a></li>
+        <li><a href="/#beliefs">What we store</a></li>
+        <li><a href="https://atlan.com" rel="noreferrer">Atlan</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="fbot">
+    <span>Atlan Scan — the free scanner in front of Atlan Registry.</span>
+    <span class="sp"><span class="mono">engine scan-1.0.0</span></span>
+  </div>
+</div></footer>
+<script>
+const COPY={
+  'mcp':'MCP scanning — server config, tool definitions and credential handling — ships with Atlan Registry.',
+  'plugin':'Plugin scanning — every bundled skill, command and hook read together — ships with Atlan Registry.',
+  'sub-agent':'Sub-agent scanning — definitions and the tools they are granted — ships with Atlan Registry.',
+  'more':'Continuous re-scanning, your whole team\'s skills in one inventory, and a policy gate on install.'
+};
+function openModal(kind){
+  const m=document.getElementById('mask'); if(!m) return;
+  document.getElementById('mfeature').value=kind||'';
+  if(COPY[kind]) document.getElementById('mbody').textContent=COPY[kind];
+  m.classList.add('on');
+}
+function closeModal(){ document.getElementById('mask').classList.remove('on'); }
+document.addEventListener('click',e=>{
+  if(e.target.id==='mx'||e.target.id==='mask') closeModal();
+  const t=e.target.closest('[data-lock]');
+  if(t){ e.preventDefault(); openModal(t.dataset.lock); }
+});
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeModal(); });
+</script>
+</body></html>

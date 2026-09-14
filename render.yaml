@@ -1,0 +1,26 @@
+# Render Blueprint. Free plan: no persistent disk, so scans live only as long as the
+# instance does — fine for a public demo, not for anything you need to keep.
+# To make runs durable, move to a paid instance and uncomment the disk block below,
+# then set SCAN_DB to /data/scan.db.
+services:
+  - type: web
+    name: atlan-scan
+    runtime: docker
+    plan: free
+    rootDir: atlan-scan
+    healthCheckPath: /healthz
+    envVars:
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: SCAN_DB
+        value: /tmp/scan.db
+      # BASE_URL is not needed on Render — RENDER_EXTERNAL_URL is injected and used
+      # automatically, which also makes badge links come out as https.
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+    # disk:
+    #   name: scan-data
+    #   mountPath: /data
+    #   sizeGB: 1
