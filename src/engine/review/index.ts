@@ -1,9 +1,10 @@
 import { createHash } from "node:crypto";
 import type { Finding, SkillDoc } from "../types.ts";
 import { libraryFacts, skillFacts } from "../facts.ts";
+import { CATEGORIES, SEVERITY_ORDER } from "../types.ts";
 import {
   PROMPT_VERSION, SYSTEM, LIBRARY_SYSTEM, DEFAULT_SKILL_CHARS,
-  buildSkillDocument, buildLibraryDocument,
+  buildSkillDocument, buildLibraryDocument, categoryAsk,
 } from "./prompt.ts";
 import { MAX_TOKENS, DEFAULT_MAX_TOKENS, REVIEW_MODEL, ReviewUnavailable, askReviewer, reviewEnabled, type Usage } from "./client.ts";
 import { verifyLibrary, verifySkill } from "./verify.ts";
@@ -81,6 +82,64 @@ function libraryKey(skills: SkillDoc[]): string {
   return `library:${h.digest("hex")}:${REVIEW_MODEL}:${PROMPT_VERSION}`;
 }
 
+/**
+ * Content words of a title, for deciding whether two passes said the same thing.
+ *
+ * Stemmed by truncation, because the difference between two passes reporting one
+ * problem is almost always inflection: "No allowed-tools declaration" against "No
+ * allowed-tools declared in frontmatter". Crude is right here — a real stemmer
+ * would also fold "version" and "versioning", which is fine, while leaving
+ * "version" and "author" apart, which is what actually matters.
+ */
+function titleTokens(t: string): Set<string> {
+  const STOP = new Set(["a", "an", "the", "no", "not", "of", "in", "for", "to", "is", "are", "and", "or", "with", "without", "any", "its"]);
+  return new Set(
+    t.toLowerCase().replace(/[^a-z0-9\s-]/g, " ").split(/\s+/)
+      .filter((w) => w && !STOP.has(w))
+      .map((w) => (w.includes("-") ? w : w.slice(0, 5))),
+  );
+}
+
+/**
+ * One problem, reported once, however many passes noticed it.
+ *
+ * Eight passes over one skill means the same missing `allowed-tools` line gets
+ * reported by the over-privilege pass that owns it, by metadata, and by supply
+ * chain — three findings, three categories, three wordings of one sentence. That
+ * is a direct cost of fanning out, and left alone it reads as three problems.
+ *
+ * Two findings are the same finding when they quote the same text in the same
+ * file AND their titles are mostly the same words. Quote alone is not enough and
+ * never has been: no version, no author and no licence are three real findings
+ * that quote one frontmatter block, and collapsing those was a bug once already.
+ *
+ * The survivor is the most serious reading of it, ties going to the earlier
+ * category, so the choice does not depend on which pass happened to finish first.
+ */
+export function collapseAcrossPasses(findings: Finding[]): Finding[] {
+  const order = (f: Finding): number => CATEGORIES.findIndex((c) => c.id === f.categoryId);
+  const sev = (f: Finding): number => SEVERITY_ORDER.indexOf(f.severity);
+  const kept: Finding[] = [];
+
+  for (const f of findings) {
+    const mine = titleTokens(f.title);
+    const twin = kept.findIndex((k) => {
+      if (k.file !== f.file || collapseText(k.evidence) !== collapseText(f.evidence)) return false;
+      const theirs = titleTokens(k.title);
+      const shared = [...mine].filter((w) => theirs.has(w)).length;
+      const union = new Set([...mine, ...theirs]).size;
+      return union > 0 && shared / union >= 0.5;
+    });
+    if (twin === -1) { kept.push(f); continue; }
+    const k = kept[twin]!;
+    const better = sev(f) < sev(k) || (sev(f) === sev(k) && order(f) < order(k));
+    if (better) kept[twin] = f;
+  }
+  return kept;
+}
+
+const collapseText = (s: string): string => s.replace(/\s+/g, " ").trim().toLowerCase();
+
 /** How many skills are audited concurrently. Small on purpose — this is someone else's rate limit. */
 const CONCURRENCY = 4;
 
@@ -91,6 +150,13 @@ const CONCURRENCY = 4;
  * must never read as a clean one.
  */
 const maxSkills = (): number => Number(process.env["SCAN_REVIEW_MAX_SKILLS"] ?? 25);
+
+/**
+ * Output ceiling for one category pass. Far below the whole-skill ceiling, because
+ * one category of one skill has far less to say — and a tighter ceiling pulls the
+ * request timeout down with it, since that derives from this.
+ */
+const CATEGORY_TOKENS = (): number => Number(process.env["SCAN_REVIEW_CATEGORY_TOKENS"] ?? 4_000);
 
 export async function auditSkills(skills: SkillDoc[], cache?: ReviewCache): Promise<AuditReport> {
   if (!reviewEnabled() || !skills.length) return { ...EMPTY, limits: limits() };
@@ -132,27 +198,59 @@ export async function auditSkills(skills: SkillDoc[], cache?: ReviewCache): Prom
         continue;
       }
 
-      try {
-        const doc = buildSkillDocument(skill, skillFacts(skill));
-        // The largest budget any skill in this run was built to. They differ only
-        // by file count, and the biggest is the one worth naming on the report.
-        out.limits.readChars = Math.max(out.limits.readChars, doc.budget);
-        for (const c of doc.clipped) out.clipped.push({ skill: skill.name, ...c });
-        const call = await askReviewer(SYSTEM, doc.text);
+      const doc = buildSkillDocument(skill, skillFacts(skill));
+      // The largest budget any skill in this run was built to. They differ only
+      // by file count, and the biggest is the one worth naming on the report.
+      out.limits.readChars = Math.max(out.limits.readChars, doc.budget);
+      for (const c of doc.clipped) out.clipped.push({ skill: skill.name, ...c });
+
+      /**
+       * One pass, one category.
+       *
+       * Asking the whole folder one open question returned between 5 and 16
+       * findings on identical input at temperature 0 — the headline shell-execution
+       * finding present in one run and absent in the next. The structural findings
+       * were stable and the open-ended judgement was not, so the fix is to stop
+       * asking an open-ended question: eight narrow ones, each naming a single
+       * mechanism, over the same cached document.
+       *
+       * A pass that fails is that category unaudited for that skill, and it is
+       * reported by name — never folded in with the categories that came back
+       * clean, which is the distinction this whole report exists to keep.
+       */
+      const pass = async (c: (typeof CATEGORIES)[number]): Promise<Finding[]> => {
+        const call = await askReviewer(SYSTEM, { document: doc.text, ask: categoryAsk(c) }, CATEGORY_TOKENS());
         spend(call.usage);
         const { findings, dropped } = verifySkill(skill, call.json);
-        out.reviewed++;
         out.dropped += dropped.length;
-        out.findings.push(...findings);
-        if (call.incomplete) out.partial.push({ skill: skill.name, kept: findings.length, reason: call.incomplete });
-        // A partial answer is not cached: the next run should get the chance to finish.
-        else cache?.put(key, findings);
-      } catch (err) {
-        const reason = err instanceof ReviewUnavailable ? err.message : (err as Error).message;
-        // A skill the auditor could not read is reported as unaudited. It is never
-        // rolled into the pass column, because a silent skip reads exactly like a clean result.
-        out.failures.push({ skill: skill.name, reason });
-      }
+        if (call.incomplete) {
+          out.partial.push({ skill: `${skill.name} · ${c.id}`, kept: findings.length, reason: call.incomplete });
+        }
+        return findings;
+      };
+
+      // The first pass alone, so it writes the cache the other seven read. Fired
+      // together they would each miss it and each pay to write the folder again.
+      const [head, ...rest] = CATEGORIES;
+      const collected: Finding[] = [];
+      let complete = true;
+      const settle = async (c: (typeof CATEGORIES)[number]): Promise<void> => {
+        try {
+          collected.push(...(await pass(c)));
+        } catch (err) {
+          complete = false;
+          const reason = err instanceof ReviewUnavailable ? err.message : (err as Error).message;
+          out.failures.push({ skill: `${skill.name} · ${c.id}`, reason });
+        }
+      };
+
+      if (head) await settle(head);
+      await Promise.all(rest.map(settle));
+
+      out.reviewed++;
+      out.findings.push(...collapseAcrossPasses(collected));
+      // Only a run where every category answered is worth serving again.
+      if (complete && !out.partial.some((x) => x.skill.startsWith(`${skill.name} · `))) cache?.put(key, collected);
     }
   };
 

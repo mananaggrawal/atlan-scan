@@ -30,6 +30,33 @@ export interface VerifyOutcome {
 }
 
 const collapse = (s: string) => s.replace(/\s+/g, " ").trim();
+
+/**
+ * Take a quote out of the markdown fence the model wrapped it in.
+ *
+ * Models fence anything that looks like code, so evidence arrives as
+ * ```python\n<the real line>\n``` — and the fence markers are not in the file, so
+ * a verbatim search fails and a true finding is discarded as invented. On one
+ * skill this silently dropped eight of nine over-privilege findings, including
+ * the LibreOffice subprocess and the shell script, which is the whole audit.
+ *
+ * Unwrapping is safe in a way that loosening the match would not be: what is
+ * inside the fence still has to appear in the file character for character. This
+ * corrects presentation and concedes nothing about content, which is the rule the
+ * verifier lives by — it overrules the evidence, never the judgement.
+ */
+export function unfenceQuote(s: string): string {
+  const t = s.trim();
+  if (!t.startsWith("```")) return s;
+  const firstLine = t.indexOf("\n");
+  if (firstLine === -1) return s;
+  const close = t.lastIndexOf("```");
+  if (close <= firstLine) return s;
+  // Only a single fenced block. Two of them joined by prose is an assembled
+  // quote, and an assembled quote is exactly what this check exists to catch.
+  if (t.slice(firstLine, close).includes("```")) return s;
+  return t.slice(firstLine + 1, close).replace(/\n$/, "");
+}
 const clip = (s: string, n: number) => (s.length <= n ? s : `${s.slice(0, n - 1).trimEnd()}…`);
 
 /**
@@ -157,7 +184,7 @@ export function verifyFindings(
       dropped.push({ reason: "severity is not one of ours", title: label });
       continue;
     }
-    const evidence = typeof r.evidence === "string" ? r.evidence : "";
+    const evidence = unfenceQuote(typeof r.evidence === "string" ? r.evidence : "");
     const at = place(corpus, typeof r.file === "string" ? r.file : "", evidence);
     if (at === null) {
       // The single most important branch in this file.

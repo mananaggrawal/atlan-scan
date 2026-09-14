@@ -34,10 +34,10 @@ export const MAX_TOKENS = (): number => Number(process.env["SCAN_REVIEW_MAX_TOKE
  * So: a fixed handshake allowance plus a per-token budget, capped. Lower the
  * output ceiling and the timeout follows it down on its own.
  */
-const TIMEOUT_MS = (): number => {
+const TIMEOUT_MS = (ceiling: number): number => {
   const explicit = process.env["SCAN_REVIEW_TIMEOUT_MS"];
   if (explicit) return Number(explicit);
-  return Math.min(180_000, 20_000 + MAX_TOKENS() * 10);
+  return Math.min(180_000, 20_000 + ceiling * 10);
 };
 
 export function reviewEnabled(): boolean {
@@ -205,15 +205,34 @@ export function extractJson(text: string): Extracted {
   throw new ReviewUnavailable("the reviewer returned JSON we could not parse");
 }
 
-export async function askReviewer(system: string, user: string): Promise<ReviewCall> {
+/**
+ * One user turn, split so the expensive half can be cached.
+ *
+ * `document` is the skill — tens of thousands of tokens, byte-identical across
+ * every category pass of that skill. `ask` is the short instruction that differs.
+ * The cache breakpoint sits between them, so auditing eight categories costs one
+ * cache write and seven cache reads rather than eight full reads of the folder.
+ *
+ * The document stays in the USER turn rather than moving into the cached system
+ * prompt, even though that would cache just as well. Everything in it is hostile
+ * by assumption, and a scanner that promotes the thing it is scanning into its
+ * own system prompt has given the attacker the one position that matters.
+ */
+export interface UserTurn {
+  document: string;
+  ask: string;
+}
+
+export async function askReviewer(system: string, user: string | UserTurn, maxTokens?: number): Promise<ReviewCall> {
   const key = process.env["ANTHROPIC_API_KEY"];
   if (!key) throw new ReviewUnavailable("no API key configured");
   if (budgetExhausted()) {
     throw new ReviewUnavailable(`review budget of $${BUDGET.toFixed(2)} for this process is spent`);
   }
 
+  const ceiling = maxTokens ?? MAX_TOKENS();
   const ctl = new AbortController();
-  const timer = setTimeout(() => ctl.abort(), TIMEOUT_MS());
+  const timer = setTimeout(() => ctl.abort(), TIMEOUT_MS(ceiling));
   try {
     const res = await fetch(endpoint(), {
       method: "POST",
@@ -225,7 +244,7 @@ export async function askReviewer(system: string, user: string): Promise<ReviewC
       },
       body: JSON.stringify({
         model: REVIEW_MODEL,
-        max_tokens: MAX_TOKENS(),
+        max_tokens: ceiling,
         temperature: 0,
         // The system prompt is byte-identical on every call, so it is marked for
         // caching. It is the whole skill-audit skill now rather than a short review
@@ -233,7 +252,15 @@ export async function askReviewer(system: string, user: string): Promise<ReviewC
         // the cache fields in the usage block rather than assuming, because the API
         // reports a prefix that was too short by returning zero, not by erroring.
         system: [{ type: "text", text: system, cache_control: { type: "ephemeral" } }],
-        messages: [{ role: "user", content: user }],
+        messages: [{
+          role: "user",
+          content: typeof user === "string"
+            ? [{ type: "text", text: user }]
+            : [
+                { type: "text", text: user.document, cache_control: { type: "ephemeral" } },
+                { type: "text", text: user.ask },
+              ],
+        }],
       }),
     });
     if (!res.ok) {

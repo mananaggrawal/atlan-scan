@@ -79,13 +79,21 @@ async function startStubModel(): Promise<string> {
     let body = "";
     req.on("data", (c) => (body += c));
     req.on("end", () => {
-      const parsed = JSON.parse(body || "{}") as { messages?: { content?: string }[] };
-      const user = parsed.messages?.[0]?.content ?? "";
-      const hit = firstQuotableLine(user);
+      // The turn is [document, ask] now, split so the document can be cached across
+      // a skill's eight category passes. Join them back to read it like one message.
+      const parsed = JSON.parse(body || "{}") as {
+        messages?: { content?: string | { type?: string; text?: string }[] }[];
+      };
+      const raw = parsed.messages?.[0]?.content ?? "";
+      const user = typeof raw === "string" ? raw : raw.map((b) => b.text ?? "").join("\n");
+      // Answer as the category this pass asked for, so eight passes do not all
+      // return the same finding and collapse in dedup.
+      const asked = /This pass is `([a-z-]+)`/.exec(user)?.[1] ?? "opacity";
+      const hit = asked === "opacity" ? firstQuotableLine(user) : null;
       const findings = hit
         ? [{
             file: hit.file,
-            categoryId: "opacity",
+            categoryId: asked,
             severity: "medium",
             title: "Worth a second look before installing",
             evidence: hit.line,

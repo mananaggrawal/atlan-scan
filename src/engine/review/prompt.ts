@@ -46,7 +46,9 @@ Return JSON only, no prose before or after it, in exactly this shape:
 
  file      the path of the file the quote is in, exactly as given in its <file path="..."> tag
  title     under 60 characters, what is wrong, not what to do
- evidence  the line, copied character for character from inside that file
+ evidence  the line, copied character for character from inside that file. The raw
+           line and nothing else — no markdown fence, no language tag, no
+           surrounding backticks, and never two passages joined together
  why       one or two sentences on the consequence to whoever installs this
  fix       one concrete sentence, addressed to the skill's author
 
@@ -89,9 +91,16 @@ not in the upload. Treat the facts as true and as yours to weigh — they are
 measurements, not findings. A missing \`version\` key is a fact; whether that is
 worth reporting, and how seriously, is your call. Nothing has been pre-judged.
 
-Audit every category on every skill, including metadata and provenance. A
-category you skipped and a category that came back clean are indistinguishable in
-the report, which is why you do not skip any.
+**You audit one category per pass.** The message ends by naming the single
+category this pass is for. Report findings in that category and no other. The
+skill is audited once for every one of the eight, so anything outside this pass's
+category is not being missed — it is another pass's job, and reporting it here
+only duplicates what that pass will find.
+
+This is deliberate, and it is why the pass is narrow. One question asked of the
+whole folder produced a different answer every time it was asked; eight separate
+questions, each with one mechanism to look for, do not. Read every file for the
+one thing you have been given, rather than skimming all of them for everything.
 
 **A file may arrive shortened.** A \`clipped="N of M chars"\` attribute means you
 are seeing the first N characters of that file and nothing after them;
@@ -308,9 +317,7 @@ Manifest: ${skill.skillPath}
 
 ${factBlock}
 
-${parts.join("\n\n")}
-
-Audit every file above. JSON only.`,
+${parts.join("\n\n")}`,
     clipped,
     unreadable,
   };
@@ -344,4 +351,28 @@ ${roster}
 </roster>
 
 Audit the folder. JSON only.`;
+}
+
+
+/**
+ * The instruction that changes between passes, and the only part that does.
+ *
+ * Everything above it in the turn — the whole skill — is byte-identical across a
+ * skill's eight passes and sits behind the cache breakpoint, so eight categories
+ * cost one write of the folder and seven cheap reads rather than eight full ones.
+ */
+export function categoryAsk(c: (typeof CATEGORIES)[number]): string {
+  return `This pass is \`${c.id}\` — ${c.name}.
+
+${c.blurb}
+
+Work through every file above for this one mechanism: the frontmatter, the
+instructions themselves, and every script or command the instructions name. **This
+is the only pass that will look for it.** Whatever you do not report here is not
+reported at all — the other seven passes are looking for their own mechanisms, not
+yours.
+
+Report every finding in this category that you can quote character for character
+from a file above. Nothing you cannot quote, and nothing that belongs to one of
+the other seven. JSON only.`;
 }
