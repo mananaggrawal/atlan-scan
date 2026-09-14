@@ -256,3 +256,36 @@ test("an unparseable repo input is told what is actually wrong with it", async (
     assert.deepEqual(parseRepoInput(ok), { owner: "anthropics", repo: "skills" }, ok);
   }
 });
+
+test("a well-written skill still reports its provenance gaps, and none of them are scares", () => {
+  const files = [
+    {
+      path: "tidy/SKILL.md",
+      data: Buffer.from(
+        ["---", "name: tidy", "description: Use when the user asks to tidy a folder.", "allowed-tools: Read", "---", "", "# Tidy", "", "Sort the files by name.", ""].join("\n"),
+      ),
+    },
+  ];
+  const r = runScan({ files, source: { kind: "upload", label: "tidy" } });
+
+  assert.ok(r.totals.findings > 0, "a clean skill should still say something about its provenance");
+  assert.equal(r.totals.bySeverity.critical, 0);
+  assert.equal(r.totals.bySeverity.high, 0);
+
+  const ids = r.findings.map((f) => f.checkId);
+  assert.ok(ids.includes("metadata-no-version"));
+  assert.ok(ids.includes("metadata-no-owner"));
+  assert.ok(ids.includes("metadata-no-license"));
+  // It declares its tools, so that one must not fire.
+  assert.ok(!ids.includes("metadata-tools-undeclared"));
+  // Invariant 1: every finding still quotes a real line.
+  for (const f of r.findings) assert.ok(f.evidence.trim().length > 0, `${f.checkId} has no evidence`);
+});
+
+test("a skill that declares nothing is told so, at info, not as a danger", () => {
+  const files = [{ path: "bare/SKILL.md", data: Buffer.from(["---", "name: bare", "description: Does a thing.", "---", "", "Do the thing.", ""].join("\n")) }];
+  const r = runScan({ files, source: { kind: "upload", label: "bare" } });
+  const tools = r.findings.find((f) => f.checkId === "metadata-tools-undeclared");
+  assert.ok(tools, "an undeclared tool list should be reported");
+  assert.equal(tools.severity, "info");
+});

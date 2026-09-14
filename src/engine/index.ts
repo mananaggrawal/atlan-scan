@@ -11,7 +11,7 @@ import { supplyChecks } from "./checks/supply.ts";
 import { privilegeChecks } from "./checks/privilege.ts";
 import { exfilChecks } from "./checks/exfil.ts";
 import { opacityChecks } from "./checks/opacity.ts";
-import { metadataChecks } from "./checks/metadata.ts";
+import { metadataChecks, provenanceChecks } from "./checks/metadata.ts";
 import { libraryFindings } from "./library.ts";
 
 const PER_SKILL_CHECKS = [
@@ -22,6 +22,7 @@ const PER_SKILL_CHECKS = [
   ...exfilChecks,
   ...opacityChecks,
   ...metadataChecks,
+  ...provenanceChecks,
 ];
 
 export function newRunId(): string {

@@ -73,6 +73,11 @@ export const CHECK_CATALOG: CheckMeta[] = [
   { id: "metadata-over-budget", categoryId: "metadata", name: "Description over budget", blurb: "Past 1,536 characters the trigger wording is silently cut." },
   { id: "metadata-keyword-stuffed", categoryId: "metadata", name: "Keyword-stuffed description", blurb: "Fires on prompts it has no business in, on every turn." },
   { id: "metadata-body-over-limit", categoryId: "metadata", name: "Body over the line limit", blurb: "Expensive to load and unlikely to have been read in full." },
+  { id: "metadata-no-version", categoryId: "metadata", name: "No version", blurb: "Nothing says whether this is the skill you reviewed last month." },
+  { id: "metadata-no-owner", categoryId: "metadata", name: "No owner", blurb: "Nobody named to answer for it when it misfires." },
+  { id: "metadata-no-license", categoryId: "metadata", name: "No license", blurb: "The terms you are installing under are unstated." },
+  { id: "metadata-tools-undeclared", categoryId: "metadata", name: "No declared tool list", blurb: "Inherits whatever the agent has — shell, network, writes." },
+  { id: "metadata-broad-trigger", categoryId: "metadata", name: "Broad trigger", blurb: "Fires on many prompts, and wins ones that belonged elsewhere." },
 
   // Library-level — AST09
   { id: "library-trigger-collision", categoryId: "library", name: "Trigger collision", blurb: "Two skills competing for the same prompts; which fires is arbitrary." },
@@ -82,3 +87,6 @@ export const CHECK_CATALOG: CheckMeta[] = [
 ];
 
 export const CHECK_IDS = new Set(CHECK_CATALOG.map((c) => c.id));
+
+/** How many named checks the fixed skeleton runs. Copy reads this, never a literal. */
+export const CHECK_COUNT = CHECK_CATALOG.length;

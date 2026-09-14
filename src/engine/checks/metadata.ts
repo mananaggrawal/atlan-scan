@@ -149,3 +149,127 @@ export const metadataChecks: Check[] = [
     return [];
   },
 ];
+
+// ---------------------------------------------------------------------------
+// Provenance and accountability.
+//
+// These fire on skills that are otherwise well written, and that is the point:
+// a skill can carry nothing dangerous in its text and still be impossible to
+// govern, because nobody can say who owns it, what version you have, or what
+// it is allowed to touch. Every one of these quotes a real line (or the real
+// absence of one, anchored to the frontmatter) and is reported at info/low —
+// posture, not danger.
+// ---------------------------------------------------------------------------
+
+const VERSION_KEYS = ["version", "v", "revision"];
+const OWNER_KEYS = ["author", "owner", "maintainer", "team", "contact"];
+const LICENSE_FILE = /(^|\/)(LICENSE|LICENCE|COPYING)(\.[A-Za-z0-9]+)?$/i;
+
+/** The frontmatter line to anchor an "absent key" finding to, plus its text. */
+function fmAnchor(skill: { frontmatterRaw: string }): { line: number; text: string } {
+  const lines = skill.frontmatterRaw.split(/\r?\n/);
+  const i = lines.findIndex((l) => /^\s*name\s*:/.test(l));
+  const at = i >= 0 ? i : 0;
+  return { line: at + 2, text: (lines[at] ?? "---").trim() || "---" };
+}
+
+export const provenanceChecks: Check[] = [
+  ({ skill }) => {
+    if (!skill.frontmatterRaw.trim()) return [];
+    if (VERSION_KEYS.some((k) => skill.frontmatter[k])) return [];
+    const a = fmAnchor(skill);
+    return [
+      mk({
+        checkId: "metadata-no-version",
+        categoryId: "metadata",
+        severity: "info",
+        skill,
+        line: a.line,
+        title: "No version in frontmatter",
+        evidence: a.text,
+        why: "Without a version there is no way to tell whether this is the same skill you reviewed last month. It can be rewritten in place and every scan, diff and approval you have recorded still points at the same name.",
+        fix: "Add a version: to the frontmatter and raise it whenever the body changes.",
+        ast: ["AST04", "AST07"],
+      }),
+    ];
+  },
+  ({ skill }) => {
+    if (!skill.frontmatterRaw.trim()) return [];
+    if (OWNER_KEYS.some((k) => skill.frontmatter[k])) return [];
+    const a = fmAnchor(skill);
+    return [
+      mk({
+        checkId: "metadata-no-owner",
+        categoryId: "metadata",
+        severity: "info",
+        skill,
+        line: a.line,
+        title: "No owner in frontmatter",
+        evidence: a.text,
+        why: "Nothing in the file says who is accountable for it. When this skill misfires, there is no one to route it to and no one who has to answer for the next version.",
+        fix: "Add an author: or owner: naming a person or a team, not a mailing list.",
+        ast: ["AST04"],
+      }),
+    ];
+  },
+  ({ skill }) => {
+    if (!skill.frontmatterRaw.trim()) return [];
+    if (skill.files.some((f) => LICENSE_FILE.test(f.path))) return [];
+    if (skill.frontmatter["license"]) return [];
+    const a = fmAnchor(skill);
+    return [
+      mk({
+        checkId: "metadata-no-license",
+        categoryId: "metadata",
+        severity: "info",
+        skill,
+        line: a.line,
+        title: "No license beside the skill",
+        evidence: a.text,
+        why: "The terms you are installing under are unstated. For a skill that came from outside the company, that is the difference between something legal can sign off and something nobody can.",
+        fix: "Add a LICENSE file to the skill folder, or a license: key to the frontmatter.",
+        ast: ["AST02"],
+      }),
+    ];
+  },
+  ({ skill }) => {
+    if (!skill.frontmatterRaw.trim()) return [];
+    if (skill.frontmatter["allowed-tools"] || skill.frontmatter["allowed_tools"]) return [];
+    const a = fmAnchor(skill);
+    return [
+      mk({
+        checkId: "metadata-tools-undeclared",
+        categoryId: "metadata",
+        severity: "info",
+        skill,
+        line: a.line,
+        title: "No declared tool list",
+        evidence: a.text,
+        why: "With no allowed-tools the skill inherits whatever the agent already has — shell, network, file writes — whether it needs them or not. The blast radius is the agent's, not the skill's.",
+        fix: "Declare allowed-tools with the smallest set the skill actually uses.",
+        ast: ["AST03"],
+      }),
+    ];
+  },
+  ({ skill }) => {
+    const desc = skill.frontmatter["description"] ?? "";
+    if (!desc) return [];
+    const clauses = desc.split(/\bor\b/i).length - 1;
+    if (clauses < 5) return [];
+    const line = skill.lines.findIndex((l) => /^\s*description\s*:/.test(l)) + 1;
+    return [
+      mk({
+        checkId: "metadata-broad-trigger",
+        categoryId: "metadata",
+        severity: "low",
+        skill,
+        line: line || 3,
+        title: "Trigger covers many alternatives",
+        evidence: desc.slice(0, 160),
+        why: `The description offers ${clauses + 1} separate ways to fire. The wider the trigger, the more turns this skill loads into, and the more often it wins a prompt that belonged to something else.`,
+        fix: "Split it, or narrow the description to the cases this skill is genuinely best at.",
+        ast: ["AST04", "AST09"],
+      }),
+    ];
+  },
+];

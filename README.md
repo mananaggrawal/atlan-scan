@@ -34,7 +34,7 @@ Decisions, not implementation details. Changing one changes what the product is.
 
 ## The fixed report skeleton
 
-`src/engine/catalog.ts` declares **8 categories × 45 named checks**. Every scan renders every
+`src/engine/catalog.ts` declares **8 categories × 50 named checks**. Every scan renders every
 check in the same order whatever was uploaded — a check is either CLEAR or has findings, never
 absent. Three tests enforce it: the reported list must equal the catalog exactly, no finding
 may carry an id outside it, and the same folder must produce a byte-identical report. The
@@ -45,7 +45,7 @@ construction, and two scans of the same library are directly comparable.
 
 ```
 src/engine/          the scanner — no I/O, no network, pure functions
-  catalog.ts         the fixed skeleton: 45 checks with names and descriptions
+  catalog.ts         the fixed skeleton: 50 checks with names and descriptions
   types.ts           categories, severities, the Finding shape
   parse.ts           decoding, frontmatter, skill-tree building, command-line gating
   checks/            injection · external · supply · privilege · exfil · opacity · metadata
@@ -72,7 +72,7 @@ preview/             rendered pages, openable as static files
 
 ## The badge is a disclosure badge
 
-It states what was scanned and when, and links to the findings: `8 skills · 24/45 flagged · 2d`.
+It states what was scanned and when, and links to the findings: `8 skills · 28/50 flagged · 2d`.
 It never renders a tick, a pass, or the word safe. A maintainer who publishes findings and fixes
 is more trustworthy than one who publishes a green tick, and a static scanner cannot earn the
 second claim anyway.

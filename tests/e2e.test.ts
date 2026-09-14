@@ -138,7 +138,7 @@ test("a report is shareable by link with no publish step, and the badge claims n
   const badge = await get(`/badge/${runId}.svg`);
   assert.equal(badge.status, 200);
   const svg = await badge.text();
-  assert.match(svg, /skills? · \d+\/45 flagged/);
+  assert.match(svg, /skills? · \d+\/\d+ flagged/);
   assert.ok(!/\bsafe\b|✓|passed/i.test(svg), "badge made a safety claim");
 });
 
