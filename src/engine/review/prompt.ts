@@ -91,16 +91,9 @@ not in the upload. Treat the facts as true and as yours to weigh — they are
 measurements, not findings. A missing \`version\` key is a fact; whether that is
 worth reporting, and how seriously, is your call. Nothing has been pre-judged.
 
-**You audit one category per pass.** The message ends by naming the single
-category this pass is for. Report findings in that category and no other. The
-skill is audited once for every one of the eight, so anything outside this pass's
-category is not being missed — it is another pass's job, and reporting it here
-only duplicates what that pass will find.
-
-This is deliberate, and it is why the pass is narrow. One question asked of the
-whole folder produced a different answer every time it was asked; eight separate
-questions, each with one mechanism to look for, do not. Read every file for the
-one thing you have been given, rather than skimming all of them for everything.
+Audit every category on every skill, including metadata and provenance. A
+category you skipped and a category that came back clean are indistinguishable in
+the report, which is why you do not skip any.
 
 **A file may arrive shortened.** A \`clipped="N of M chars"\` attribute means you
 are seeing the first N characters of that file and nothing after them;

@@ -4,7 +4,7 @@ import { libraryFacts, skillFacts } from "../facts.ts";
 import { CATEGORIES, SEVERITY_ORDER } from "../types.ts";
 import {
   PROMPT_VERSION, SYSTEM, LIBRARY_SYSTEM, DEFAULT_SKILL_CHARS,
-  buildSkillDocument, buildLibraryDocument, categoryAsk,
+  buildSkillDocument, buildLibraryDocument,
 } from "./prompt.ts";
 import { MAX_TOKENS, DEFAULT_MAX_TOKENS, REVIEW_MODEL, ReviewUnavailable, askReviewer, reviewEnabled, type Usage } from "./client.ts";
 import { verifyLibrary, verifySkill } from "./verify.ts";
@@ -151,12 +151,6 @@ const CONCURRENCY = 4;
  */
 const maxSkills = (): number => Number(process.env["SCAN_REVIEW_MAX_SKILLS"] ?? 25);
 
-/**
- * Output ceiling for one category pass. Far below the whole-skill ceiling, because
- * one category of one skill has far less to say — and a tighter ceiling pulls the
- * request timeout down with it, since that derives from this.
- */
-const CATEGORY_TOKENS = (): number => Number(process.env["SCAN_REVIEW_CATEGORY_TOKENS"] ?? 4_000);
 
 export async function auditSkills(skills: SkillDoc[], cache?: ReviewCache): Promise<AuditReport> {
   if (!reviewEnabled() || !skills.length) return { ...EMPTY, limits: limits() };
@@ -198,59 +192,43 @@ export async function auditSkills(skills: SkillDoc[], cache?: ReviewCache): Prom
         continue;
       }
 
-      const doc = buildSkillDocument(skill, skillFacts(skill));
-      // The largest budget any skill in this run was built to. They differ only
-      // by file count, and the biggest is the one worth naming on the report.
-      out.limits.readChars = Math.max(out.limits.readChars, doc.budget);
-      for (const c of doc.clipped) out.clipped.push({ skill: skill.name, ...c });
-
       /**
-       * One pass, one category.
+       * One call per skill, all eight categories at once.
        *
-       * Asking the whole folder one open question returned between 5 and 16
-       * findings on identical input at temperature 0 — the headline shell-execution
-       * finding present in one run and absent in the next. The structural findings
-       * were stable and the open-ended judgement was not, so the fix is to stop
-       * asking an open-ended question: eight narrow ones, each naming a single
-       * mechanism, over the same cached document.
+       * Per-category passes were built and measured (`38e71a5`): they made the
+       * over-privilege findings identical run to run, which one open question
+       * never did — that spread was 5 to 16 findings on identical input. They
+       * also cost about $0.144 a skill against $0.06, because the folder is sent
+       * eight times even with the cache paying for seven of them cheaply.
        *
-       * A pass that fails is that category unaudited for that skill, and it is
-       * reported by name — never folded in with the categories that came back
-       * clean, which is the distinction this whole report exists to keep.
+       * Manan's call, knowingly: take the variance for now and take the cost back.
+       * The machinery is still here — `categoryAsk` in prompt.ts and the cached
+       * two-part user turn in client.ts — so going back is a small change, not a
+       * rewrite. What must not be lost with it is `unfenceQuote`, which is what
+       * made those passes look empty and was never per-category at all.
        */
-      const pass = async (c: (typeof CATEGORIES)[number]): Promise<Finding[]> => {
-        const call = await askReviewer(SYSTEM, { document: doc.text, ask: categoryAsk(c) }, CATEGORY_TOKENS());
+      try {
+        const doc = buildSkillDocument(skill, skillFacts(skill));
+        // The largest budget any skill in this run was built to. They differ only
+        // by file count, and the biggest is the one worth naming on the report.
+        out.limits.readChars = Math.max(out.limits.readChars, doc.budget);
+        for (const c of doc.clipped) out.clipped.push({ skill: skill.name, ...c });
+
+        const call = await askReviewer(SYSTEM, `${doc.text}\n\nAudit every file above, for every category. JSON only.`);
         spend(call.usage);
         const { findings, dropped } = verifySkill(skill, call.json);
+        out.reviewed++;
         out.dropped += dropped.length;
-        if (call.incomplete) {
-          out.partial.push({ skill: `${skill.name} · ${c.id}`, kept: findings.length, reason: call.incomplete });
-        }
-        return findings;
-      };
-
-      // The first pass alone, so it writes the cache the other seven read. Fired
-      // together they would each miss it and each pay to write the folder again.
-      const [head, ...rest] = CATEGORIES;
-      const collected: Finding[] = [];
-      let complete = true;
-      const settle = async (c: (typeof CATEGORIES)[number]): Promise<void> => {
-        try {
-          collected.push(...(await pass(c)));
-        } catch (err) {
-          complete = false;
-          const reason = err instanceof ReviewUnavailable ? err.message : (err as Error).message;
-          out.failures.push({ skill: `${skill.name} · ${c.id}`, reason });
-        }
-      };
-
-      if (head) await settle(head);
-      await Promise.all(rest.map(settle));
-
-      out.reviewed++;
-      out.findings.push(...collapseAcrossPasses(collected));
-      // Only a run where every category answered is worth serving again.
-      if (complete && !out.partial.some((x) => x.skill.startsWith(`${skill.name} · `))) cache?.put(key, collected);
+        out.findings.push(...collapseAcrossPasses(findings));
+        if (call.incomplete) out.partial.push({ skill: skill.name, kept: findings.length, reason: call.incomplete });
+        // An incomplete answer is not cached: the next run should get the chance to finish.
+        else cache?.put(key, findings);
+      } catch (err) {
+        const reason = err instanceof ReviewUnavailable ? err.message : (err as Error).message;
+        // A skill the auditor could not read is reported as unaudited. It is never
+        // rolled into the pass column, because a silent skip reads exactly like a clean result.
+        out.failures.push({ skill: skill.name, reason });
+      }
     }
   };
 

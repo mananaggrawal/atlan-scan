@@ -10,6 +10,7 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import { reviewEnabled, runScan } from "../src/engine/index.ts";
+import { reviewCache, reviewCacheSize } from "../src/store/reviewcache.ts";
 import type { RawFile } from "../src/engine/parse.ts";
 import type { ScanResult, Severity } from "../src/engine/types.ts";
 
@@ -125,7 +126,9 @@ async function main(): Promise<void> {
     --publish     upload findings only (never your files) and print a report URL
     --server URL  where to publish (default $ATLAN_SCAN_SERVER, else https://scan.atlan.com)
     --quiet       exit code only
+    --no-cache    audit again even if this exact skill was audited before
 
+  A skill that has not changed is served from cache and costs nothing.
   Exit code is 1 when anything critical or high is found, otherwise 0.
 `);
     return;
@@ -154,10 +157,37 @@ async function main(): Promise<void> {
     process.exit(2);
   }
 
-  const result = await runScan({ files, source: { kind: "cli", label: target.split("/").pop() || target } });
+  /**
+   * Local scans are cached too, the way the server's always have been.
+   *
+   * They were not, and iterating on this tool meant paying for the same audit
+   * every time: on one day of work that was fifty-odd scans of one skill and most
+   * of a five-dollar bill. The key already covers every file of the skill, the
+   * model and the prompt version, so a real change still costs a real call — what
+   * stops costing is re-running the identical thing.
+   *
+   * `--no-cache` exists because a cached answer is byte-identical by definition,
+   * which is exactly wrong when what you are measuring is how much the auditor
+   * varies between runs. Use it for that, and only for that.
+   */
+  const fresh = args.includes("--no-cache");
+  const before = fresh ? 0 : reviewCacheSize();
+  const result = await runScan(
+    { files, source: { kind: "cli", label: target.split("/").pop() || target } },
+    fresh ? undefined : reviewCache,
+  );
 
   if (args.includes("--json")) console.log(JSON.stringify(result, null, 2));
-  else if (!args.includes("--quiet")) print(result);
+  else if (!args.includes("--quiet")) {
+    print(result);
+    if (result.audit.cached > 0) {
+      console.log(C.dim(`  ${result.audit.cached} of ${result.audit.cached + result.audit.reviewed} served from cache — identical to the run that filled it. --no-cache to force a fresh audit.`));
+      console.log("");
+    } else if (!fresh && reviewCacheSize() > before) {
+      console.log(C.dim("  Cached. Scanning this again, unchanged, costs nothing."));
+      console.log("");
+    }
+  }
 
   if (args.includes("--publish")) {
     const i = args.indexOf("--server");

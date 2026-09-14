@@ -1,4 +1,5 @@
 import { mkdirSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
 import { dirname } from "node:path";
 import type { ScanResult } from "../engine/types.ts";
@@ -129,7 +130,18 @@ function sqliteBackend(path: string): Backend | null {
   }
 }
 
-const backend: Backend = (process.env["SCAN_DB"] !== "memory" ? sqliteBackend(process.env["SCAN_DB"] ?? "./data/scan.db") : null) ?? memoryBackend();
+/**
+ * Anchored to the package, not to the working directory.
+ *
+ * `./data/scan.db` meant the CLI wrote a fresh database wherever it happened to
+ * be run from, so the review cache it had just filled was invisible on the next
+ * run from a different folder — a cache that silently misses is worse than none,
+ * because it looks like it is working. Render sets SCAN_DB explicitly and is
+ * unaffected.
+ */
+const DEFAULT_DB = fileURLToPath(new URL("../../data/scan.db", import.meta.url));
+
+const backend: Backend = (process.env["SCAN_DB"] !== "memory" ? sqliteBackend(process.env["SCAN_DB"] ?? DEFAULT_DB) : null) ?? memoryBackend();
 
 export const storeKind = backend.kind;
 
