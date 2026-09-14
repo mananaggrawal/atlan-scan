@@ -437,11 +437,25 @@ footer.bot{border-top:1px solid var(--line);margin-top:74px;padding:48px 0 34px;
 .badgewarn{font-size:12.5px;line-height:1.55;color:var(--high);background:var(--high-bg);
   border:1px solid #EBD3B4;border-radius:8px;padding:11px 13px;margin-top:12px}
 
-.sharecard{padding:26px 28px;margin-top:22px}
-.sharecard h3{font-size:19px}
-.sharecard>p.muted{font-size:14px;margin-top:9px;max-width:56em;line-height:1.55}
 .sharelbl{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;
   color:var(--faint);margin:20px 0 8px}
+
+/* Share, in the rail — the same two things worth copying, at rail width. */
+.rail .sharerc .sharemain{width:100%;justify-content:center;margin-top:13px;padding:11px;font-size:14px;border-radius:9px}
+.rail .sharerc .sharelbl{margin:15px 0 0}
+.rail .sharerc .snip{margin-top:7px;padding:8px 8px 8px 11px;gap:8px}
+.rail .sharerc .snip code{font-size:11px}
+.rail .sharerc .snipbtn{padding:5px 10px;font-size:12px}
+.rail .sharerc img{max-width:100%}
+.rail .sharerc .badgewarn{font-size:11.5px;padding:9px 11px}
+
+/* Share, in the header — beside the name of what was scanned. */
+.titlerow{display:flex;align-items:flex-end;gap:18px;flex-wrap:wrap}
+.titlerow h1{flex:1;min-width:0}
+.headshare{flex:none;margin-bottom:5px;gap:8px;white-space:nowrap}
+.headshare .shareic{font-size:15px;line-height:1;margin-right:-2px}
+.btn.ok,.btn.ok:hover{background:var(--blue-soft);border-color:var(--blue-line);color:var(--blue)}
+@media (max-width:640px){.headshare{width:100%;justify-content:center}}
 
 .platcta{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:24px}
 .platcta span{font-size:13.5px;color:var(--muted)}

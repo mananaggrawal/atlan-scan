@@ -1,7 +1,7 @@
 import { esc, page, type User } from "../layout.ts";
 import type { CategoryResult, Finding, ScanResult, Severity } from "../../engine/types.ts";
 import { enterpriseModal, MODAL_SCRIPT } from "./modal.ts";
-import { publicBanner, sharePanel } from "./public.ts";
+import { publicBanner, shareButton, shareRail } from "./public.ts";
 
 /**
  * Nothing on this page is allowed to be arbitrarily long.
@@ -174,7 +174,7 @@ function caveats(r: ScanResult, full: boolean): string {
   </div>`;
 }
 
-function rail(r: ScanResult, full: boolean, isPublic = false): string {
+function rail(r: ScanResult, full: boolean, isPublic = false, share = ""): string {
   const grants = r.findings.filter((f) => f.categoryId === "over-privilege").length;
   const meta = full
     ? `<div class="kv"><span>Skills</span><b>${r.totals.skills}</b></div>
@@ -193,6 +193,7 @@ function rail(r: ScanResult, full: boolean, isPublic = false): string {
 
   return `<aside class="rail">
     <div class="rc" style="padding:0"><a class="btn btn-ghost" style="width:100%;border:0;justify-content:center;padding:17px" href="/scan">${isPublic ? "Scan your own skills" : "↻ Run new scan"}</a></div>
+    ${share}
     <div class="rc">
       <h4>Metadata</h4>
       <p>Read from the files you uploaded</p>
@@ -265,6 +266,10 @@ export interface ResultOpts {
 export function resultPage(r: ScanResult, user: User | null, opts: ResultOpts = {}): string {
   const full = Boolean(user) || Boolean(opts.isPublic);
   const when = new Date(r.scannedAt).toISOString().replace("T", " ").slice(0, 16);
+  // Sharing belongs beside what was scanned and in the rail that follows you down the
+  // page — not in a panel you only meet after scrolling past every finding.
+  const canShare = Boolean(opts.baseUrl) && (Boolean(opts.isOwner) || Boolean(opts.isPublic));
+  const base = opts.baseUrl ?? "";
 
   return page({
     title: `Scan results — ${r.totals.findings} findings`,
@@ -275,7 +280,10 @@ export function resultPage(r: ScanResult, user: User | null, opts: ResultOpts = 
   <div class="pagehead">
     <div class="ph">
       <span class="eyebrow">Scan results</span>
-      <h1 style="margin-top:10px">${esc(short(r.source.label, 80))}</h1>
+      <div class="titlerow">
+        <h1 style="margin-top:10px">${esc(short(r.source.label, 80))}</h1>
+        ${canShare ? shareButton(r.runId, base) : ""}
+      </div>
       <p class="resultlede">${lede(r)}</p>
       <div class="chips">
         <span class="chip"><span class="lbl">Scanned at</span>${when} UTC</span>
@@ -291,10 +299,9 @@ export function resultPage(r: ScanResult, user: User | null, opts: ResultOpts = 
   <div class="cols" style="margin-top:26px">
     <div>
       ${r.categories.map((c) => categoryCard(c, r, full)).join("")}
-      ${opts.isOwner ? sharePanel(r.runId, opts.baseUrl ?? "") : ""}
       ${opts.isPublic ? "" : registryCta()}
     </div>
-    ${rail(r, full, Boolean(opts.isPublic))}
+    ${rail(r, full, Boolean(opts.isPublic), canShare ? shareRail(r.runId, base) : "")}
   </div>
 </div>
 ${enterpriseModal()}`,

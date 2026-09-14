@@ -45,12 +45,37 @@ document.addEventListener('click',e=>{
   if(t){ e.preventDefault(); openModal(t.dataset.lock); }
 });
 document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeModal(); });
+async function copyText(t){
+  try{ await navigator.clipboard.writeText(t); return true; }
+  catch{}
+  const ta=document.createElement('textarea');
+  ta.value=t; ta.setAttribute('readonly',''); ta.style.position='fixed'; ta.style.opacity='0';
+  document.body.appendChild(ta); ta.select();
+  let ok=false; try{ ok=document.execCommand('copy'); }catch{}
+  ta.remove(); return ok;
+}
+function flash(b,msg){
+  if(b.dataset.busy) return;
+  const was=b.innerHTML; b.dataset.busy='1'; b.classList.add('ok'); b.innerHTML=msg;
+  setTimeout(()=>{ b.innerHTML=was; b.classList.remove('ok'); delete b.dataset.busy; },1600);
+}
+/* One share action, wherever it sits: the phone's own share sheet if there is one,
+   the clipboard everywhere else. */
+document.addEventListener('click',async e=>{
+  const b=e.target.closest('[data-share]'); if(!b) return;
+  const url=b.dataset.share;
+  if(navigator.share){
+    try{ await navigator.share({title:document.title,url}); return; }
+    catch(err){ if(err&&err.name==='AbortError') return; }
+  }
+  flash(b, await copyText(url) ? 'Link copied' : 'Press \u2318C to copy');
+});
 document.addEventListener('click',async e=>{
   const b=e.target.closest('[data-copy]'); if(!b) return;
   const el=document.getElementById(b.dataset.copy); if(!el) return;
-  try{ await navigator.clipboard.writeText(el.textContent.trim()); }
-  catch{ const r=document.createRange(); r.selectNodeContents(el);
-         const s=getSelection(); s.removeAllRanges(); s.addRange(r); }
-  const was=b.textContent; b.textContent='Copied'; setTimeout(()=>{b.textContent=was;},1400);
+  const ok=await copyText(el.textContent.trim());
+  if(!ok){ const r=document.createRange(); r.selectNodeContents(el);
+           const s=getSelection(); s.removeAllRanges(); s.addRange(r); }
+  flash(b, ok?'Copied':'Select it');
 });
 `;
