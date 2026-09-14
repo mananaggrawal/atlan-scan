@@ -1,22 +1,5 @@
 import { page, type User } from "../layout.ts";
 
-/**
- * One mark per pillar, drawn on the same 16-unit grid at the same stroke weight so
- * the four read as a family rather than four clip-art icons. All stroked in
- * currentColor, so a tab's mark takes the tab's own state — muted when it is not
- * the open one, brand blue when it is — with no second colour to keep in sync.
- */
-const MARKS: Record<string, string> = {
-  // Scan: the brand square, with the corner dot from the wordmark, being read across.
-  scan: `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="9" height="9" rx="2.5"/><path d="M4.4 6.5h4.2"/><circle cx="12.4" cy="12.4" r="1.9" fill="currentColor" stroke="none"/></svg>`,
-  // Control: policy — rails with a setting on each.
-  control: `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 5.2h3.1M8.9 5.2H14M2 10.8h6.1M11.9 10.8H14"/><circle cx="7" cy="5.2" r="1.9"/><circle cx="10" cy="10.8" r="1.9"/></svg>`,
-  // Defend: a shield, stopping something mid-run.
-  defend: `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 1.9 13.2 4v4.1c0 3-2.1 5.1-5.2 6-3.1-.9-5.2-3-5.2-6V4Z"/><path d="M5.9 8.1 7.4 9.6l3-3.2"/></svg>`,
-  // Marketplace: a shelf, with one item vetted and picked.
-  marketplace: `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="5" height="5" rx="1.5"/><rect x="9" y="2" width="5" height="5" rx="1.5"/><rect x="2" y="9" width="5" height="5" rx="1.5"/><rect x="9" y="9" width="5" height="5" rx="1.5" fill="currentColor" stroke="currentColor"/></svg>`,
-};
-
 const PILLARS = [
   { id: "scan", tab: "Atlan Scan", lead: "Vets what agents install",
     body: "skills, MCPs, plugins and sub-agents read line by line before they install.",
@@ -153,10 +136,11 @@ export function landingPage(user: User | null): string {
   <div style="margin-top:30px">
     <div class="tabs">
       ${PILLARS.map((p) => {
-        // "Atlan" is the constant half of every lockup; the product word is the half
-        // that changes, so that is the half that carries the weight and the colour.
+        // Every tab carries the same lockup the header does — the mark and the word
+        // "Atlan" are the brand and do not vary. Only the product word changes, and
+        // it takes the blue that "Scan" takes in the wordmark.
         const word = p.tab.replace(/^Atlan\s+/, "");
-        return `<button class="tab${p.id === "scan" ? " on" : ""}" data-tab="${p.id}">${MARKS[p.id] ?? ""}<span class="tl">Atlan <b>${word}</b></span></button>`;
+        return `<button class="tab${p.id === "scan" ? " on" : ""}" data-tab="${p.id}"><span class="sq"></span><span class="tl">Atlan <b>${word}</b></span></button>`;
       }).join("")}
     </div>
     ${PILLARS.map(
