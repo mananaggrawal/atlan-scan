@@ -6,7 +6,7 @@ import {
   PROMPT_VERSION, SYSTEM, LIBRARY_SYSTEM, DEFAULT_SKILL_CHARS,
   buildSkillDocument, buildLibraryDocument,
 } from "./prompt.ts";
-import { MAX_TOKENS, DEFAULT_MAX_TOKENS, REVIEW_MODEL, ReviewUnavailable, askReviewer, reviewEnabled, type Usage } from "./client.ts";
+import { MAX_TOKENS, DEFAULT_MAX_TOKENS, REVIEW_MODEL, ReviewUnavailable, askReviewer, reviewEnabled, spentSoFar, type Usage } from "./client.ts";
 import { verifyLibrary, verifySkill } from "./verify.ts";
 
 export { reviewEnabled, REVIEW_MODEL, PROMPT_VERSION };
@@ -151,6 +151,18 @@ const CONCURRENCY = 4;
  */
 const maxSkills = (): number => Number(process.env["SCAN_REVIEW_MAX_SKILLS"] ?? 25);
 
+/**
+ * What one scan may spend, whatever it is pointed at.
+ *
+ * SCAN_REVIEW_BUDGET_USD is a ceiling on the PROCESS, and `spent` is module state
+ * that starts again at zero on every restart. On free hosting that restarts on
+ * each deploy and each idle period, that is not a ceiling on anything — it reads
+ * like one, which is worse than having none. This is the bound that actually holds:
+ * a single scan stops buying audits once it has spent this much, and the skills it
+ * did not reach are reported as unaudited, never counted as clear.
+ */
+const perScanUsd = (): number => Number(process.env["SCAN_REVIEW_SCAN_BUDGET_USD"] ?? 0.75);
+
 
 export async function auditSkills(skills: SkillDoc[], cache?: ReviewCache): Promise<AuditReport> {
   if (!reviewEnabled() || !skills.length) return { ...EMPTY, limits: limits() };
@@ -159,6 +171,10 @@ export async function auditSkills(skills: SkillDoc[], cache?: ReviewCache): Prom
     ran: true, model: REVIEW_MODEL, cached: 0, reviewed: 0, dropped: 0,
     failures: [], clipped: [], partial: [], findings: [], usage: { ...NO_USAGE }, limits: limits(),
   };
+
+  // What this process had spent before this scan started, so the ceiling below is
+  // per scan rather than per process.
+  const openingSpend = spentSoFar();
 
   const spend = (u: Usage): void => {
     out.usage.input += u.input;
@@ -189,6 +205,11 @@ export async function auditSkills(skills: SkillDoc[], cache?: ReviewCache): Prom
       if (hit) {
         out.cached++;
         out.findings.push(...hit);
+        continue;
+      }
+      // Cached skills are free and never counted against this.
+      if (perScanUsd() > 0 && spentSoFar() - openingSpend >= perScanUsd()) {
+        out.failures.push({ skill: skill.name, reason: `this scan reached its $${perScanUsd().toFixed(2)} ceiling before reaching it` });
         continue;
       }
 

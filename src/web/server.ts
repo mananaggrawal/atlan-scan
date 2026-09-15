@@ -6,6 +6,7 @@ import type { RawFile } from "../engine/parse.ts";
 import { fetchRepoFiles, LIMITS, parseRepoInput, repoInputError } from "../ingest/github.ts";
 import { claimRuns, getRun, putRun, runsFor, setOwner, storeKind } from "../store/runs.ts";
 import { reviewCache } from "../store/reviewcache.ts";
+import { scanKey, scansPerHour, takeScanSlot } from "./ratelimit.ts";
 import { badgeSvg } from "./badge.ts";
 import { ensureSampleRun, SAMPLE_RUN_ID } from "./sample.ts";
 import { landingPage } from "./pages/landing.ts";
@@ -119,6 +120,17 @@ async function handleScan(req: IncomingMessage, res: ServerResponse, sid: string
   if (!files.some((f) => /(^|\/)SKILL\.md$/i.test(f.path))) {
     return json(res, 400, {
       error: "No SKILL.md in there. Atlan Scan reads skills — point it at one skill folder, or a directory of them.",
+    });
+  }
+
+  // Checked here, after the request is known to be a real scan, so a malformed
+  // payload cannot burn someone's allowance by being rejected.
+  const slot = takeScanSlot(scanKey(req, sid));
+  if (!slot.ok) {
+    res.setHeader("retry-after", String(slot.retryAfter));
+    return json(res, 429, {
+      error: `That is ${scansPerHour()} scans in an hour from here, which is the limit. `
+        + `This is a free scanner paying a model per skill it reads. Try again in ${Math.ceil(slot.retryAfter / 60)} minutes.`,
     });
   }
 

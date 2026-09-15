@@ -7,6 +7,7 @@ import { locate, unfenceQuote, verifySkill, verifyLibrary, corpusOf, MAX_PER_SKI
 import { extractJson } from "../src/engine/review/client.ts";
 import { SYSTEM, LIBRARY_SYSTEM, allocate, buildSkillDocument, buildLibraryDocument } from "../src/engine/review/prompt.ts";
 import { cacheKey, collapseAcrossPasses } from "../src/engine/review/index.ts";
+import { takeScanSlot } from "../src/web/ratelimit.ts";
 
 const f = (path: string, body: string): RawFile => ({ path, data: Buffer.from(body) });
 
@@ -188,6 +189,32 @@ test("the read budget goes to what the manifest reaches, not evenly across the f
  * script among them — because the backticks are not in the file and the verbatim
  * search failed, so a true finding was discarded as an invented one.
  */
+/**
+ * /api/scan is public, unauthenticated, and audits up to twenty-five skills with a
+ * paid model. Unmetered, anyone who found the address could bill a loop to the owner.
+ */
+test("a visitor cannot buy an unlimited number of audits", () => {
+  const key = `test-${Math.random()}`;
+  const allowed: number[] = [];
+  for (let i = 0; i < 20; i++) if (takeScanSlot(key).ok) allowed.push(i);
+
+  assert.ok(allowed.length > 0, "a first scan is always allowed");
+  assert.ok(allowed.length < 20, "and the twentieth in an hour is not");
+  const refused = takeScanSlot(key);
+  assert.equal(refused.ok, false);
+  assert.ok(refused.retryAfter > 0, "a refusal says when to come back");
+
+  // The window is an hour, so the same visitor is allowed again after it passes.
+  assert.equal(takeScanSlot(key, Date.now() + 61 * 60 * 1000).ok, true);
+});
+
+test("the limit is per visitor, not global — one loop cannot lock everyone out", () => {
+  const busy = `busy-${Math.random()}`;
+  for (let i = 0; i < 20; i++) takeScanSlot(busy);
+  assert.equal(takeScanSlot(busy).ok, false);
+  assert.equal(takeScanSlot(`someone-else-${Math.random()}`).ok, true);
+});
+
 test("one problem seen by three passes is reported once, at its worst reading", () => {
   const base = { skill: "s", file: "s/SKILL.md", line: 1, evidence: "---", why: "w", fix: "f", origin: "model" as const };
   const out = collapseAcrossPasses([
