@@ -2,6 +2,8 @@
   <img src="docs/hero.svg" alt="Atlan Scan — read what is actually in the skills your agents install" width="100%">
 </p>
 
+[![Atlan Scan](https://atlan-scan.onrender.com/badge/xdLsVZ6jryfV.svg)](https://atlan-scan.onrender.com/p/xdLsVZ6jryfV)
+
 **Atlan Scan reads what is actually inside the skills, agents and plugins you install
 — and reports the lines that can hurt you, quoted, located, with a fix.**
 
