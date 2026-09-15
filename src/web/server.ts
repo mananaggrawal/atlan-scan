@@ -67,7 +67,9 @@ function notFound(res: ServerResponse, user: ReturnType<typeof currentUser>): vo
       title: "Not found — Atlan Scan",
       user,
       body: `<div class="narrow" style="padding:80px 0"><h1 style="font-size:36px">Not here.</h1>
-      <p class="lede" style="margin-top:14px">That scan has expired, or the link is wrong. <a href="/scan">Run a new one</a>.</p></div>`,
+      <p class="lede" style="margin-top:14px">This report is gone, and the link was probably fine.
+      Reports live on a free instance with no disk, so they last until the server next restarts —
+      every deploy and every idle period clears them. <a href="/scan">Scanning again</a> takes about a minute.</p></div>`,
     }),
   );
 }

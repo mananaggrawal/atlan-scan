@@ -31,6 +31,10 @@ export function shareRail(runId: string, base: string): string {
   return `<div class="rc sharerc" id="share">
     <h4>Share this report</h4>
     <p>Anyone with the link can read it. Nothing to switch on.</p>
+    <p class="badgewarn">This link dies when the server restarts — this instance runs on
+    free hosting with no disk, so that is every deploy and every idle period. Send it to
+    someone now and it will work; put it in a document and it will not. The README badge
+    below has the same lifespan.</p>
 
     <button class="btn btn-primary sharemain" type="button" data-share="${esc(url)}">Copy link</button>
 

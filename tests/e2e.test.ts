@@ -300,7 +300,13 @@ test("privacy and terms are real pages, and they say what the engine actually ke
   const privacy = privacyPage(null);
   assert.match(privacy, /never stored/i);
   assert.match(privacy, /SHA-256/);
-  assert.match(privacy, /ninety days/);
+  // Retention has to match what the deployment actually does. This asserted
+  // "ninety days" while the live instance was losing every report on each restart,
+  // so the test was guarding a false promise rather than a true one. The page must
+  // now say plainly that a report dies with the server.
+  assert.match(privacy, /a report lasts until the\s+server next restarts/i);
+  assert.ok(!/for ninety days, so a report you come back to still\s+exists/.test(privacy),
+    "the ninety-day retention promise must not come back while the instance has no disk");
   // The four things the store keeps, per the invariant in types.ts.
   for (const kept of ["findings", "counts", "SHA-256", "quotes"]) assert.ok(privacy.includes(kept), `privacy omits ${kept}`);
 

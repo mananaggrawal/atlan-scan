@@ -34,9 +34,19 @@ export function privacyPage(user: User | null): string {
 <p>Files are read in memory and dropped when the scan finishes. The contents of your
 skills are not written to disk, not logged, and not used to train anything.</p>
 
-<h3>What a scan does keep</h3>
-<p>Four things, for ninety days, so a report you come back to still exists and a
-re-scan can be compared against it:</p>
+<h3>How long a report lasts</h3>
+<p><b>This instance runs on free hosting with no disk, so a report lasts until the
+server next restarts — often minutes, sometimes hours, never days.</b> A restart
+happens on every deploy and whenever the instance idles, and when it does, every
+report link stops working and your scan history empties. Treat a report as
+something to read now, not somewhere to keep a record. Run the scan again and you
+get a fresh one.</p>
+<p>We would rather say this plainly than let you find out from a dead link. A
+scanner that overstates what it can do is not worth pointing at your skills.</p>
+
+<h3>What a scan keeps while it exists</h3>
+<p>Four things, so a report you come back to inside that window still reads
+properly:</p>
 <ul>
   <li>the list of findings — the check that fired, its category and severity</li>
   <li>counts: skills, files read, files that could not be read</li>
@@ -67,8 +77,10 @@ file before anything is shown. Only the findings are kept, under the rules above
 </ul>
 
 <h3>Deleting things</h3>
-<p>Scans age out after ninety days on their own. To remove a scan or an account before
-that, email the address below and it will be deleted.</p>`,
+<p>Scans are gone at the next restart, which is the shortest retention there is. The
+code carries a ninety-day expiry as well, for an instance with a disk under it; on
+this one the restart always comes first. To remove an account, email the address
+below and it will be deleted.</p>`,
   );
 }
 
