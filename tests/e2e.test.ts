@@ -115,6 +115,10 @@ async function startStubModel(): Promise<string> {
 
 before(async () => {
   process.env["ANTHROPIC_API_KEY"] = "test-key";
+  // The sample is off by default in production because it re-buys a full audit of
+  // the demo library on every restart. Here it is answered by the stub and free,
+  // and the test below is what holds it to showing real findings.
+  process.env["SCAN_SAMPLE"] = "1";
   process.env["SCAN_REVIEW_ENDPOINT"] = await startStubModel();
   server = makeServer();
   await new Promise<void>((r) => server.listen(0, r));

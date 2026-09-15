@@ -30,8 +30,20 @@ function collect(root: string): RawFile[] {
   return out;
 }
 
+/**
+ * Building the sample costs a full audit of the demo library — eight skills and a
+ * library pass, about $0.50 — and on free hosting it was paying that on every
+ * restart. The run is stored in /tmp and so is the review cache, so a restart
+ * wipes both and the next boot buys all nine calls again. With six deploys in a
+ * day and an instance that sleeps whenever nobody is looking, that quietly became
+ * the largest line on the bill, and it was invisible because nobody asked it to run.
+ *
+ * So it is off unless asked for. Set SCAN_SAMPLE=1 to build it, on a deploy where
+ * you want it rebuilt, and unset it afterwards.
+ */
 export async function ensureSampleRun(): Promise<void> {
   if (getRun(SAMPLE_RUN_ID)) return;
+  if (process.env["SCAN_SAMPLE"] !== "1") return;
   if (!reviewEnabled()) {
     console.warn("[sample] no ANTHROPIC_API_KEY — the example report is not built, rather than published empty.");
     return;
@@ -42,6 +54,12 @@ export async function ensureSampleRun(): Promise<void> {
       files: collect(root),
       source: { kind: "upload", label: "example-skill-library" },
     });
+    // A sample where nothing could be audited is the most misleading page on the
+    // site — it is the one visitors read to decide whether this tool does anything.
+    if (result.audit.ran && result.audit.reviewed === 0) {
+      console.warn(`[sample] every skill failed to audit (${result.audit.failures[0]?.reason ?? "unknown"}) — not publishing an empty example.`);
+      return;
+    }
     putRun({ ...result, runId: SAMPLE_RUN_ID }, "sample-session", null);
     setPublic(SAMPLE_RUN_ID, true);
   } catch (err) {

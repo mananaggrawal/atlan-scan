@@ -153,6 +153,27 @@ test("assemble: findings sort worst-first and roll up into totals", () => {
   assert.equal(r.skills[0]!.findings, 3);
 });
 
+/**
+ * The live sample report read "Nothing reported across 8 skills. All 8 categories
+ * were audited and came back empty" on a run where all nine calls returned 400 and
+ * nothing was read. The caveat strip said so and was outvoted by the headline.
+ */
+test("assemble: a run where every audit failed never reads as a clean one", () => {
+  const audit: AuditReport = {
+    ...NO_AUDIT,
+    ran: true,
+    reviewed: 0,
+    failures: [{ skill: "deploy-helper", reason: "reviewer returned 400: credit balance is too low" }],
+  };
+  const r = assemble({ files: [f("deploy-helper/SKILL.md", SKILL)], source: { kind: "upload", label: "t" } }, audit);
+  const html = resultPage(r, { id: "u", email: "a@b.c", name: "A" });
+
+  assert.match(html, /Not audited/i, "the headline has to carry it, not just the small print");
+  assert.ok(!/came back empty/.test(html), "a failed audit is not an empty one");
+  assert.ok(!/✓ nothing reported/.test(html), "and no category may claim a clean tick");
+  assert.match(html, /credit balance is too low/, "and it says why");
+});
+
 test("assemble: a truncated audit is reported as partial, never as complete", () => {
   const audit: AuditReport = { ...auditWith([finding()]), partial: [{ skill: "deploy-helper", kept: 1, reason: "the model's output limit" }] };
   const r = assemble({ files: [f("deploy-helper/SKILL.md", SKILL)], source: { kind: "upload", label: "t" } }, audit);

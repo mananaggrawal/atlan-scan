@@ -46,8 +46,13 @@ function lockRow(runId: string, label: string): string {
 }
 
 function categoryCard(c: CategoryResult, r: ScanResult, full: boolean): string {
+  // With a skill unaudited, "✓ nothing reported" overstates what this category knows:
+  // nothing was reported by the skills that were read, and the rest were never looked at.
+  const incomplete = r.audit.ran && (r.audit.failures.length > 0 || r.partial.length > 0);
   const status = c.count === 0
-    ? `<span class="status clear">✓ nothing reported</span>`
+    ? incomplete
+      ? `<span class="status">nothing reported, from what was audited</span>`
+      : `<span class="status clear">✓ nothing reported</span>`
     : `<span class="status flag ${c.worst}">${plural(c.count, "finding")}</span>`;
 
   const head = `<div class="cathead">
@@ -213,7 +218,25 @@ function lede(r: ScanResult): string {
   if (!r.audit.ran) {
     return `<b>Not audited.</b> The audit is a model reading every file, and none was available for this run.${unread}`;
   }
+  /**
+   * An audit that was attempted and failed is not an audit that came back clean.
+   *
+   * This read "Nothing reported across 8 skills. All 8 categories were audited and
+   * came back empty" on a run where every single call returned 400 and nothing was
+   * read at all. The "Not covered" strip said so underneath, and was outvoted by a
+   * headline, five zeroes and eight green ticks. An unaudited thing reading as a
+   * clean one is the single failure this report exists to prevent, so the headline
+   * has to carry it too, not just the small print.
+   */
+  if (r.audit.reviewed === 0 && r.audit.cached === 0 && r.audit.failures.length) {
+    return `<b>Not audited.</b> Every skill here failed to audit — ${esc(short(r.audit.failures[0]!.reason, 120))}. Nothing below is a result.${unread}`;
+  }
   if (r.totals.findings === 0) {
+    // Only a run where everything was actually read may call itself empty.
+    if (r.audit.failures.length) {
+      return `Nothing reported from the <b>${plural(r.audit.reviewed + r.audit.cached, "skill")}</b> that were audited, and
+        <b>${plural(r.audit.failures.length, "more")}</b> could not be audited at all. That is not the same as clean.${unread}`;
+    }
     return `Nothing reported across <b>${plural(r.totals.skills, "skill")}</b>. All ${cats} categories were audited and came back empty.${unread}`;
   }
   return `<b>${plural(r.totals.findings, "finding")}</b> across <b>${plural(r.totals.skills, "skill")}</b>, in ${flagged} of ${cats} categories${
