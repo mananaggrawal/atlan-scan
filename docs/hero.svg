@@ -5,12 +5,11 @@
   <!-- wordmark -->
   <rect x="64" y="58" width="26" height="26" rx="7" fill="#2026D2"/>
   <circle cx="96" cy="80" r="7" fill="#62E1FC"/>
-  <text x="112" y="82" font-family="Inter, system-ui, -apple-system, Segoe UI, sans-serif" font-size="30" font-weight="600" fill="#1B1C24">Atlan</text>
-  <text x="196" y="82" font-family="Inter, system-ui, -apple-system, Segoe UI, sans-serif" font-size="30" font-weight="600" fill="#2026D2">Scan</text>
+  <text x="112" y="82" font-family="Inter, system-ui, -apple-system, Segoe UI, sans-serif" font-size="30" font-weight="600" fill="#1B1C24">Atlan <tspan fill="#2026D2">Scan</tspan></text>
 
-  <text x="64" y="146" font-family="Inter, system-ui, -apple-system, Segoe UI, sans-serif" font-size="34" font-weight="600" fill="#1B1C24">Read what is actually in the skills</text>
-  <text x="64" y="188" font-family="Inter, system-ui, -apple-system, Segoe UI, sans-serif" font-size="34" font-weight="600" fill="#1B1C24">your agents install.</text>
-  <text x="64" y="236" font-family="Inter, system-ui, -apple-system, Segoe UI, sans-serif" font-size="18" fill="#77778E">Every finding quotes the line it came from. It never calls a skill safe.</text>
+  <text x="64" y="146" font-family="Inter, system-ui, -apple-system, Segoe UI, sans-serif" font-size="34" font-weight="600" fill="#1B1C24">Read what is actually in</text>
+  <text x="64" y="188" font-family="Inter, system-ui, -apple-system, Segoe UI, sans-serif" font-size="34" font-weight="600" fill="#1B1C24">the skills your agents install.</text>
+  <text x="64" y="236" font-family="Inter, system-ui, -apple-system, Segoe UI, sans-serif" font-size="18" fill="#77778E">Every finding quotes the line it came from, with the file and the fix.</text>
 
   <!-- category chips -->
   <g font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12" fill="#77778E">
@@ -23,7 +22,7 @@
     <rect x="508" y="284" width="66" height="26" rx="13" fill="#EDEEFD"/><text x="523" y="301" fill="#2026D2">AST08</text>
     <rect x="582" y="284" width="66" height="26" rx="13" fill="#EDEEFD"/><text x="597" y="301" fill="#2026D2">AST09</text>
   </g>
-  <text x="64" y="346" font-family="Inter, system-ui, sans-serif" font-size="14" fill="#A3A3B8">Eight categories, reported on every scan — cleared or not.</text>
+  <text x="64" y="346" font-family="Inter, system-ui, sans-serif" font-size="14" fill="#A3A3B8">All eight on every scan — cleared, flagged, or named as unread.</text>
 
   <!-- a finding, as the report renders it -->
   <rect x="700" y="64" width="436" height="302" rx="14" fill="#FFFFFF" stroke="#DDDDE3"/>
@@ -31,7 +30,7 @@
 
   <rect x="728" y="92" width="74" height="24" rx="12" fill="#F34D77"/>
   <text x="742" y="109" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12" font-weight="600" fill="#FFFFFF">critical</text>
-  <text x="816" y="109" font-family="Inter, system-ui, sans-serif" font-size="15" font-weight="600" fill="#1B1C24">Credentials read, then sent out</text>
+  <text x="814" y="109" font-family="Inter, system-ui, sans-serif" font-size="15" font-weight="600" fill="#1B1C24">Credentials read, then sent out</text>
 
   <text x="728" y="140" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12" fill="#A3A3B8">data-sync/SKILL.md:12</text>
 
@@ -42,6 +41,5 @@
   <text x="728" y="258" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#3E4C59">The description says it syncs project data. It also</text>
   <text x="728" y="278" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#3E4C59">reads your AWS keys and posts them to a webhook.</text>
 
-  <text x="728" y="318" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="600" fill="#2026D2">Fix</text>
-  <text x="756" y="318" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#3E4C59">Remove the credential read and the upload.</text>
+  <text x="728" y="318" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="600" fill="#2026D2">Fix <tspan font-weight="400" fill="#3E4C59">Remove the credential read and the upload.</tspan></text>
 </svg>
