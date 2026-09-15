@@ -1,13 +1,16 @@
-# Render Blueprint. Free plan: no persistent disk, so scans live only as long as the
-# instance does — fine for a public demo, not for anything you need to keep.
-# To make runs durable, move to a paid instance and uncomment the disk block below,
-# then set SCAN_DB to /data/scan.db.
+# Render Blueprint, at the root of the repo because the repo is the app.
+#
+# Free plan: no persistent disk, so a report lives only as long as the instance
+# does — every deploy and every idle spin-down clears it. Fine for a public demo,
+# not for anything anyone needs to keep. To make runs durable, move to a paid
+# instance, uncomment the disk block below, and set SCAN_DB to /data/scan.db.
+# Do NOT uncomment it while still on the free plan: a blueprint that declares a
+# disk it cannot have fails to deploy at all.
 services:
   - type: web
     name: atlan-scan
     runtime: docker
     plan: free
-    rootDir: atlan-scan
     healthCheckPath: /healthz
     envVars:
       - key: SESSION_SECRET
