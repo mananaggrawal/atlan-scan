@@ -140,9 +140,10 @@ async function handleScan(req: IncomingMessage, res: ServerResponse, sid: string
 }
 
 export function makeServer() {
-  // Fire-and-forget: the sample costs model calls to build, and the server must
-  // come up and answer /healthz whether or not that succeeds.
-  void ensureSampleRun().catch((err: unknown) => console.warn(`[sample] ${(err as Error).message}`));
+  // Reading the committed sample is a file read, not an audit — cheap enough to do
+  // inline, and it never throws: a missing or stale file warns and leaves /p/sample
+  // 404ing rather than stopping the server from answering /healthz.
+  ensureSampleRun();
   return createServer(async (req, res) => {
   const url = new URL(req.url ?? "/", `http://${req.headers.host ?? "localhost"}`);
   const sid = sessionId(req, res);

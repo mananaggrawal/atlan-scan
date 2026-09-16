@@ -156,10 +156,10 @@ input[type=text]:focus{outline:2px solid var(--blue);outline-offset:-1px;border-
 .f.medium{border-left-color:var(--med)}
 .f.low{border-left-color:var(--line)}
 .f.info{border-left-color:var(--line)}
-.f .fh{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
-.f .ft{font-family:var(--display);font-weight:600;font-size:16.5px;color:var(--ink-strong);letter-spacing:-.016em}
-.f .loc{font-family:var(--mono);font-size:11.5px;color:var(--muted);margin-left:auto}
-.quote{font-family:var(--mono);font-size:12.5px;line-height:1.6;background:var(--surface-2);border:1px solid var(--line-soft);border-radius:6px;padding:11px 13px;margin:12px 0;color:var(--ink-strong);overflow-x:auto;white-space:pre-wrap;word-break:break-word}
+.f .fh{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;min-width:0}
+.f .ft{font-family:var(--display);font-weight:600;font-size:16.5px;color:var(--ink-strong);letter-spacing:-.016em;flex:1 1 auto;min-width:0;overflow-wrap:anywhere}
+.f .loc{font-family:var(--mono);font-size:11.5px;color:var(--muted);flex:1 0 100%;margin:3px 0 0;overflow-wrap:anywhere}
+.quote{font-family:var(--mono);font-size:12.5px;line-height:1.6;background:var(--surface-2);border:1px solid var(--line-soft);border-radius:6px;padding:11px 13px;margin:12px 0;color:var(--ink-strong);max-width:100%;overflow-x:auto;white-space:pre-wrap;overflow-wrap:anywhere}
 .f .why{font-size:14px;color:var(--ink);line-height:1.55}
 .f .fix{font-size:13.5px;color:var(--ink);line-height:1.55;margin-top:9px;padding-left:13px;border-left:2px solid var(--cyan)}
 .f .fix b{font-family:var(--mono);font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:3px;font-weight:500}
@@ -184,7 +184,6 @@ footer.bot .disc{max-width:62em;line-height:1.6}
 @media (max-width:640px){
   .hero{padding:48px 0 40px}
   .gate{padding:22px}
-  .f .loc{margin-left:0;width:100%}
 }
 
 /* ---- AIR-shaped layout: type picker, result rail, category cards, locks ---- */
@@ -256,7 +255,7 @@ footer.bot .disc{max-width:62em;line-height:1.6}
 .lockbtn:hover{background:#000;text-decoration:none;color:#fff}
 
 .ribbon{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:44px 26px 34px;text-align:center;overflow:hidden;margin-top:22px}
-.ribbon::before{content:"Registry plan";position:absolute;left:-52px;top:20px;transform:rotate(-45deg);background:#FBF0C4;color:#7A6410;font-family:var(--mono);font-size:10px;letter-spacing:.1em;padding:6px 60px}
+.ribbon::before{content:"Not built yet";position:absolute;left:-52px;top:20px;transform:rotate(-45deg);background:#FBF0C4;color:#7A6410;font-family:var(--mono);font-size:10px;letter-spacing:.1em;padding:6px 60px}
 .ribbon h3{font-size:23px}
 .ribbon p{font-size:14.5px;color:var(--muted);margin:10px auto 0;max-width:34em;line-height:1.55}
 .ribbon .lk{width:52px;height:52px;margin:0 auto 14px;border-radius:12px;background:var(--blue-soft);display:grid;place-items:center;font-size:23px}
@@ -265,20 +264,32 @@ footer.bot .disc{max-width:62em;line-height:1.6}
 .mask{position:fixed;inset:0;background:rgba(20,20,40,.5);display:none;place-items:center;z-index:60;padding:20px}
 .mask.on{display:grid}
 .modal{background:#fff;border-radius:16px;max-width:430px;width:100%;padding:34px 32px 26px;position:relative;overflow:hidden}
-.modal::before{content:"Registry plan";position:absolute;left:-52px;top:20px;transform:rotate(-45deg);background:#FBF0C4;color:#7A6410;font-family:var(--mono);font-size:10px;letter-spacing:.1em;padding:6px 60px}
+.modal::before{content:"Not built yet";position:absolute;left:-52px;top:20px;transform:rotate(-45deg);background:#FBF0C4;color:#7A6410;font-family:var(--mono);font-size:10px;letter-spacing:.1em;padding:6px 60px}
 .modal .x{position:absolute;top:14px;right:14px;border:1px solid var(--line);background:#fff;border-radius:7px;width:30px;height:30px;cursor:pointer;color:var(--muted);font-size:16px;line-height:1}
 .modal h3{font-size:25px;text-align:center;margin-top:6px}
 .modal>p{font-size:14px;color:var(--muted);text-align:center;margin-top:9px;line-height:1.5}
 .modal .lk{width:60px;height:60px;margin:0 auto;border-radius:14px;background:var(--blue-soft);display:grid;place-items:center;font-size:27px}
-.modal input{width:100%;font-family:var(--body);font-size:14.5px;padding:13px 14px;border:1px solid var(--line);border-radius:9px;background:var(--surface-2);margin-top:11px}
+.modal input,.modal textarea{width:100%;font-family:var(--body);font-size:14.5px;padding:13px 14px;border:1px solid var(--line);border-radius:9px;background:var(--surface-2);margin-top:11px}
+.modal textarea{resize:vertical;line-height:1.45;min-height:64px}
 .modal label.ck{display:flex;gap:10px;align-items:flex-start;font-size:12.5px;color:var(--muted);margin-top:15px;line-height:1.45}
 .modal button.sub2{width:100%;margin-top:16px;background:var(--ink-strong);color:#fff;border:0;border-radius:26px;padding:14px;font-size:15px;font-weight:500;cursor:pointer}
 .modal .fine{font-size:11.5px;color:var(--faint);text-align:center;margin-top:12px}
 
 /* landing tabs */
 .tabs{display:flex;gap:4px;background:var(--blue-soft);border-radius:12px;padding:6px;flex-wrap:wrap}
-.tab{flex:1;min-width:130px;border:1.5px solid transparent;background:transparent;border-radius:9px;padding:13px 14px;font-family:var(--body);font-size:15px;font-weight:500;color:var(--ink-strong);cursor:pointer;transition:.15s}
-.tab.on{background:#fff;border-color:var(--blue)}
+.tab{flex:1;min-width:132px;border:1.5px solid transparent;background:transparent;border-radius:9px;padding:13px 14px;font-family:var(--body);font-size:15px;font-weight:500;color:var(--ink-strong);cursor:pointer;transition:.15s;
+  display:inline-flex;align-items:center;justify-content:center;gap:9px;text-align:left}
+/* The same lockup as the header: brand mark, "Atlan", then the product word in blue.
+   Nothing about the mark changes between tabs — only the word does. */
+.tab .sq{flex:0 0 auto;width:15px;height:15px;border-radius:3px;background:var(--blue);position:relative;display:inline-block;margin-right:5px}
+.tab .sq::after{content:"";position:absolute;right:-4px;bottom:-4px;width:9px;height:9px;border-radius:2px;background:var(--cyan)}
+.tab .tl{color:var(--ink-strong);font-weight:600;letter-spacing:-.02em;min-width:0}
+.tab .tl b{color:var(--blue);font-weight:600;margin-left:.3em}
+/* The open tab is the white pill with the blue edge; the rest step back rather than
+   restyle the lockup, so the logo reads the same in all four. */
+.tab{opacity:.7}
+.tab:hover{opacity:.9}
+.tab.on{background:#fff;border-color:var(--blue);opacity:1}
 .tabwrap{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:34px;align-items:start;margin-top:34px}
 .tabwrap .td{font-size:15.5px;color:var(--ink);line-height:1.55}
 .tabwrap .td b{color:var(--ink-strong)}
@@ -435,11 +446,25 @@ footer.bot{border-top:1px solid var(--line);margin-top:74px;padding:48px 0 34px;
 .badgewarn{font-size:12.5px;line-height:1.55;color:var(--high);background:var(--high-bg);
   border:1px solid #EBD3B4;border-radius:8px;padding:11px 13px;margin-top:12px}
 
-.sharecard{padding:26px 28px;margin-top:22px}
-.sharecard h3{font-size:19px}
-.sharecard>p.muted{font-size:14px;margin-top:9px;max-width:56em;line-height:1.55}
 .sharelbl{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;
   color:var(--faint);margin:20px 0 8px}
+
+/* Share, in the rail — the same two things worth copying, at rail width. */
+.rail .sharerc .sharemain{width:100%;justify-content:center;margin-top:13px;padding:11px;font-size:14px;border-radius:9px}
+.rail .sharerc .sharelbl{margin:15px 0 0}
+.rail .sharerc .snip{margin-top:7px;padding:8px 8px 8px 11px;gap:8px}
+.rail .sharerc .snip code{font-size:11px}
+.rail .sharerc .snipbtn{padding:5px 10px;font-size:12px}
+.rail .sharerc img{max-width:100%}
+.rail .sharerc .badgewarn{font-size:11.5px;padding:9px 11px}
+
+/* Share, in the header — beside the name of what was scanned. */
+.titlerow{display:flex;align-items:flex-end;gap:18px;flex-wrap:wrap}
+.titlerow h1{flex:1;min-width:0}
+.headshare{flex:none;margin-bottom:5px;gap:8px;white-space:nowrap}
+.headshare .shareic{font-size:15px;line-height:1;margin-right:-2px}
+.btn.ok,.btn.ok:hover{background:var(--blue-soft);border-color:var(--blue-line);color:var(--blue)}
+@media (max-width:640px){.headshare{width:100%;justify-content:center}}
 
 .platcta{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:24px}
 .platcta span{font-size:13.5px;color:var(--muted)}
@@ -498,6 +523,69 @@ footer.bot{border-top:1px solid var(--line);margin-top:74px;padding:48px 0 34px;
 .shelf .badge{margin-top:9px;align-self:flex-start;font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;border-radius:4px;padding:3px 7px}
 .shelf .badge.ok{color:var(--clear);background:#EAF5EF}
 .shelf .badge.wait{color:var(--med);background:var(--med-bg)}
+
+/* The semantic review block. Marked apart from the deterministic cards on purpose. */
+.catcard.review{border-color:var(--blue-line);background:linear-gradient(180deg,var(--blue-soft) 0,transparent 120px)}
+.catcard.review .revnote{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:14px}
+.catcard.review .revfail{font-size:13px;color:var(--high);background:var(--high-bg);border-radius:7px;padding:10px 12px;margin-bottom:14px;line-height:1.55}
+.catcard.review .revempty{font-size:13.5px;color:var(--muted)}
+
+/* Privacy and terms. Plain reading column, nothing decorative. */
+.legal{max-width:40em;margin-top:34px;padding-bottom:20px}
+.legal h3{font-family:var(--display);font-weight:600;font-size:17px;color:var(--ink-strong);letter-spacing:-.015em;margin:32px 0 10px}
+.legal h3:first-child{margin-top:0}
+.legal p{font-size:15px;color:var(--muted);line-height:1.68;margin:0 0 12px}
+.legal ul{margin:0 0 12px;padding-left:20px}
+.legal li{font-size:15px;color:var(--muted);line-height:1.68;margin-bottom:7px}
+.legalfoot{font-size:13px;color:var(--faint);margin:26px 0 60px;padding-top:18px;border-top:1px solid var(--line-soft)}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Layout safety.
+
+   Every string on a report page is written by a model or copied out of somebody
+   else's file: a 90-character title with no spaces, a 400-character base64 blob,
+   a URL longer than the column. None of it may push the page sideways. The rules
+   below are deliberately blunt and deliberately last, so they win.
+
+   The two that actually matter: grid and flex children default to min-width:auto,
+   which means they refuse to shrink below their longest unbreakable word — that is
+   the cause of almost every "the layout broke" screenshot. And overflow-wrap:anywhere
+   is what lets that word break at all.
+   ───────────────────────────────────────────────────────────────────────────── */
+.cols > *{min-width:0}
+.card,.catcard,.catbody,.sub,.rail,.rail .rc{min-width:0}
+.f .why,.f .fix,.catbody .sub .sd,.cathead h3,.catbody .sub .st{overflow-wrap:anywhere;min-width:0}
+.rail .kv{align-items:baseline}
+.rail .kv span{flex:0 0 auto}
+.rail .kv b{text-align:right;overflow-wrap:anywhere;min-width:0}
+.pill,.astbadge,.status{flex:0 0 auto;white-space:nowrap}
+.wrap{overflow-x:clip}
+pre,code{max-width:100%;overflow-wrap:anywhere}
+table.tbl{display:block;max-width:100%;overflow-x:auto}
+
+/* The caveat strip: what this run did not cover. Renders only when there is something
+   to admit, and is the one thing on the page that must survive any amount of text. */
+.caveat{display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap;
+  background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--med);
+  border-radius:10px;padding:14px 18px;margin-top:18px}
+.caveat-k{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--muted);flex:0 0 auto;padding-top:3px}
+.caveat ul{margin:0;padding:0;list-style:none;flex:1 1 320px;min-width:0}
+.caveat li{font-size:13px;color:var(--ink);line-height:1.55;overflow-wrap:anywhere}
+.caveat li + li{margin-top:6px}
+.caveat-hard{border-left-color:var(--high);color:var(--ink);font-size:13.5px;line-height:1.6;display:block}
+
+/* Footer: one short column of links rather than three columns of mostly-dead ones.
+   Stacked, not in a row — a horizontal strip reads as a nav bar, not a footer. */
+.flinks{display:flex;flex-direction:column;gap:11px;align-items:flex-start}
+.flinks a{font-size:13.5px;color:var(--muted);line-height:1.3}
+.flinks a:hover{color:var(--ink-strong)}
+/* Belt and braces on the heading: the label is clamped in the renderer too, but a
+   stored run from an older build must not be able to produce a wall of text. */
+.pagehead .ph h1{overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+/* Two children now, not four. Declared last so it beats the earlier four-column rules. */
+.fcols{grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:40px;align-items:start}
+@media (max-width:700px){.fcols{grid-template-columns:1fr;gap:24px}}
 </style>
 </head><body>
 <header class="top"><div class="wrap topin">
@@ -546,7 +634,7 @@ footer.bot{border-top:1px solid var(--line);margin-top:74px;padding:48px 0 34px;
     <h2>Four steps, about a minute.</h2>
   </div>
   <div class="steps4">
-    <div class="st4"><span class="n">01</span><h4>Point</h4><p>Drop a folder, or paste a public repo. Nothing is installed and nothing is run.</p></div><div class="st4"><span class="n">02</span><h4>Read</h4><p>50 checks over every file — and an honest list of anything that could not be read.</p></div><div class="st4"><span class="n">03</span><h4>See the line</h4><p>Each finding names the skill, the line, the quoted text and the fix.</p></div><div class="st4"><span class="n">04</span><h4>Re-scan</h4><p>Run it again after the fix, or when the skill's author ships a change.</p></div>
+    <div class="st4"><span class="n">01</span><h4>Point</h4><p>Drop a folder, or paste a public repo. Nothing is installed and nothing is run.</p></div><div class="st4"><span class="n">02</span><h4>Read</h4><p>A model reads every file the way your agent would — and gives an honest list of anything it could not read.</p></div><div class="st4"><span class="n">03</span><h4>See the line</h4><p>Each finding names the skill, the line, the quoted text and the fix.</p></div><div class="st4"><span class="n">04</span><h4>Re-scan</h4><p>Run it again after the fix, or when the skill's author ships a change.</p></div>
   </div>
 </div></section>
 
@@ -565,7 +653,7 @@ footer.bot{border-top:1px solid var(--line);margin-top:74px;padding:48px 0 34px;
   </div>
   <div style="margin-top:30px">
     <div class="tabs">
-      <button class="tab on" data-tab="scan">Atlan Scan</button><button class="tab" data-tab="control">Atlan Control</button><button class="tab" data-tab="defend">Atlan Defend</button><button class="tab" data-tab="marketplace">Atlan Marketplace</button>
+      <button class="tab on" data-tab="scan"><span class="sq"></span><span class="tl">Atlan <b>Scan</b></span></button><button class="tab" data-tab="control"><span class="sq"></span><span class="tl">Atlan <b>Control</b></span></button><button class="tab" data-tab="defend"><span class="sq"></span><span class="tl">Atlan <b>Defend</b></span></button><button class="tab" data-tab="marketplace"><span class="sq"></span><span class="tl">Atlan <b>Marketplace</b></span></button>
     </div>
     <p class="td" data-panel="scan" style="margin-top:22px;max-width:66em"><b>Vets what agents install</b> — skills, MCPs, plugins and sub-agents read line by line before they install.</p><p class="td" data-panel="control" hidden style="margin-top:22px;max-width:66em"><b>Governs the agent fleet</b> — every agent found, sanctioned or shadow, held to one policy.</p><p class="td" data-panel="defend" hidden style="margin-top:22px;max-width:66em"><b>Secures every action the agent takes</b> — detect, respond and protect while the run happens, not in the post-mortem.</p><p class="td" data-panel="marketplace" hidden style="margin-top:22px;max-width:66em"><b>Supplies what agents install</b> — one trusted shelf of vetted add-ons, each with an owner and a version.</p>
     <div class="mock" data-panel="scan"><div class="bar"><i></i><i></i><i></i></div><div class="in"><div class="scanp">
@@ -574,7 +662,7 @@ footer.bot{border-top:1px solid var(--line);margin-top:74px;padding:48px 0 34px;
       <div class="rw"><span class="nm">deploy-helper</span><span class="d"><code>curl | bash</code> in the setup steps</span><span class="pill critical">critical</span></div>
       <div class="rw"><span class="nm">ui-design</span><span class="d">instruction hidden in an HTML comment</span><span class="pill high">high</span></div>
       <div class="rw"><span class="nm">invoice-parse</span><span class="d">competes with <code>invoice-extract</code> for the same prompts</span><span class="pill low">low</span></div>
-      <div class="rw"><span class="nm">changelog</span><span class="d faint">nothing flagged across 50 checks</span><span class="pill none">cleared</span></div>
+      <div class="rw"><span class="nm">changelog</span><span class="d faint">read in full, nothing reported</span><span class="pill none">cleared</span></div>
       <div class="rw"><span class="nm faint">render.bin</span><span class="d faint">binary — we could not read it</span><span class="pill medium">unreadable</span></div>
     </div></div></div><div class="mock" data-panel="control" hidden><div class="bar"><i></i><i></i><i></i></div><div class="in"><div class="scanp ctl">
       <div class="hd"><span>AGENT</span><span>IDENTITY, SCOPE AND POLICY</span><span class="r">STATUS</span></div>
@@ -604,7 +692,7 @@ footer.bot{border-top:1px solid var(--line);margin-top:74px;padding:48px 0 34px;
 <section class="band"><div class="wrap">
   <div class="sectop" id="faq"><span class="eyebrow">Questions</span><h2>The ones worth asking.</h2></div>
   <div class="faq">
-    <details open><summary>What does it actually read?</summary><p>Every file in the folder — the SKILL.md, its frontmatter, reference files, scripts, and anything sitting beside them. 50 named checks across 8 categories.</p></details><details><summary>Will two scans of the same folder match?</summary><p>Exactly. Pattern analysis, no model in the loop, and every check runs whether it fires or not. Re-scan next month and the diff is real.</p></details><details><summary>What do I pay for?</summary><p>Nothing, for skills — every finding, every quoted line, every fix. MCPs, plugins, sub-agents and continuous monitoring ship with Atlan Registry.</p></details><details><summary>Why sign in to see the detail?</summary><p>So the scan is still there next week, and so re-running it means something. Counts and category results are visible before you do.</p></details><details><summary>Can a clean report be wrong?</summary><p>Yes. A payload can be encoded, fetched at run time, or parked where reviewers do not look — which is why unreadable files are reported as findings.</p></details><details><summary>What happens to my skills afterwards?</summary><p>Nothing. Files are read in memory and dropped. What persists is the finding list, counts, a SHA-256 per skill, and each quoted line.</p></details>
+    <details open><summary>What does it actually read?</summary><p>Every file in the folder — the SKILL.md, its frontmatter, reference files, scripts, and anything sitting beside them. A model reads them as instructions that will execute, and reports across 8 categories mapped to the OWASP Agentic Skills Top 10.</p></details><details><summary>Will two scans of the same folder match?</summary><p>Unchanged files give back the same report — a skill's audit is keyed to the bytes it was read from, so a re-scan costs nothing and returns what it returned before. Change a file and that skill is read again. Every category is reported either way, cleared or not, so the diff is about your skills and not about ours.</p></details><details><summary>What do I pay for?</summary><p>Nothing, for skills — every finding, every quoted line, every fix. MCP, plugin and sub-agent scanning are not built yet; tell us which one you want and it moves up the queue. Continuous monitoring across every agent in a company is what Atlan Registry already does.</p></details><details><summary>Who does the reading?</summary><p>A model, working from a published skill you can read: skills/skill-audit/SKILL.md in our repo. It is the same instructions the hosted scanner uses, so you can run the audit yourself in Claude Code and get the same report without us. Every quote it produces is checked back against your file, and anything that does not match is dropped before you see it.</p></details><details><summary>Why sign in to see the detail?</summary><p>So the scan is still there next week, and so re-running it means something. Counts and category results are visible before you do.</p></details><details><summary>Can a clean report be wrong?</summary><p>Yes. A payload can be encoded, fetched at run time, or parked where reviewers do not look — which is why unreadable files are reported as findings.</p></details><details><summary>What happens to my skills afterwards?</summary><p>Nothing. Files are read in memory and dropped. What persists is the finding list, counts, a SHA-256 per skill, and each quoted line.</p></details>
   </div>
   <p class="faqfoot">Something not here? The scanner is the answer to most of it — <a href="/scan">run one</a> and see what comes back.</p>
 </div></section>
@@ -627,28 +715,16 @@ footer.bot{border-top:1px solid var(--line);margin-top:74px;padding:48px 0 34px;
       <a class="brand" href="/"><span class="sq"></span>Atlan <em>Scan</em></a>
       <p>Read what is actually in the skills, MCPs and plugins your agents install — before they run.</p>
     </div>
-    <div>
-      <h5>Product</h5>
-      <ul>
-        <li><a href="/scan">Scan a skill</a> <span class="flive">free</span></li>
-        <li><a href="/scan">Scan an MCP</a></li>
-        <li><a href="/scan">Scan a plugin</a></li>
-        <li><a href="/scan">Scan a sub-agent</a></li>
-      </ul>
-    </div>
-    <div>
-      <h5>Resources</h5>
-      <ul>
-        <li><a href="/#how">How it works</a></li>
-        <li><a href="/#platform">What gets checked</a></li>
-        <li><a href="/#faq">Questions</a></li>
-        <li><a href="/history">Your scans</a></li>
-      </ul>
-    </div>
+    <nav class="flinks">
+      <a href="/scan">Scan a skill</a>
+      <a href="/#how">How it works</a>
+      <a href="/privacy">Privacy</a>
+      <a href="/terms">Terms</a>
+    </nav>
   </div>
   <div class="fbot">
     <span>Atlan Scan — the free scanner in front of <a href="https://atlan.com" rel="noreferrer">Atlan</a> Agent Registry.</span>
-    <span class="sp"><span class="mono">engine scan-1.0.0</span></span>
+    <span class="sp"><span class="mono">engine scan-2.0.0</span></span>
   </div>
 </div></footer>
 <script>

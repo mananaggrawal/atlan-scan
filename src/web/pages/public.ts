@@ -1,4 +1,5 @@
 import { esc } from "../layout.ts";
+import { SAMPLE_RUN_ID } from "../sample.ts";
 
 /** GitHub proxies README images: a private host or plain http renders as a broken badge. */
 function badgeWarning(base: string): string {
@@ -23,6 +24,28 @@ export function shareUrl(runId: string, base: string): string {
  * something you do to a report rather than something you read at the end of one —
  * it should be in reach from the top of the page and stay in reach while you scroll.
  */
+/**
+ * How long this link lasts, which is not the same answer for every report.
+ *
+ * A visitor's own scan lives in memory on a free instance and really does die on
+ * the next restart, and saying so is the honest thing. The example report does
+ * not: it is read from a file committed to the repo, so it is rebuilt on every
+ * boot and its link outlives them all. Telling a first-time reader that the one
+ * page we asked them to look at is about to evaporate is both wrong and the worst
+ * possible first impression.
+ */
+function lifespan(runId: string): string {
+  if (runId === SAMPLE_RUN_ID) {
+    return `<p class="badgewarn">This is the example report, so this link is permanent — it is
+    rebuilt from the repository every time the server starts. A report from your own scan is
+    not: those live only until the next restart.</p>`;
+  }
+  return `<p class="badgewarn">This link dies when the server restarts — this instance runs on
+    free hosting with no disk, so that is every deploy and every idle period. Send it to
+    someone now and it will work; put it in a document and it will not. The README badge
+    below has the same lifespan.</p>`;
+}
+
 export function shareRail(runId: string, base: string): string {
   const url = shareUrl(runId, base);
   const md = `[![Atlan Scan](${base}/badge/${runId}.svg)](${url})`;
@@ -31,10 +54,7 @@ export function shareRail(runId: string, base: string): string {
   return `<div class="rc sharerc" id="share">
     <h4>Share this report</h4>
     <p>Anyone with the link can read it. Nothing to switch on.</p>
-    <p class="badgewarn">This link dies when the server restarts — this instance runs on
-    free hosting with no disk, so that is every deploy and every idle period. Send it to
-    someone now and it will work; put it in a document and it will not. The README badge
-    below has the same lifespan.</p>
+    ${lifespan(runId)}
 
     <button class="btn btn-primary sharemain" type="button" data-share="${esc(url)}">Copy link</button>
 

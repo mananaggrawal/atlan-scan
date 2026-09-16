@@ -1,68 +1,53 @@
-import { readdirSync, readFileSync, statSync } from "node:fs";
-import { join, relative } from "node:path";
-import { reviewEnabled, runScan } from "../engine/index.ts";
-import type { RawFile } from "../engine/parse.ts";
+import { existsSync, readFileSync } from "node:fs";
+import { ENGINE_VERSION } from "../engine/index.ts";
+import type { ScanResult } from "../engine/types.ts";
 import { getRun, putRun, setPublic } from "../store/runs.ts";
 
 /**
- * A permanently published example report at /p/sample.
+ * The permanently published example report at /p/sample.
  *
  * It exists so a visitor can read a real result — actual findings, actual quoted
- * lines — before deciding to upload anything of their own. Built from the bundled
- * demo library, and audited like any other upload: with no ANTHROPIC_API_KEY the
- * sample is not built at all, because a sample report with no findings would be
- * the most misleading page on the site.
+ * lines — before deciding to upload anything of their own. Both landing CTAs point
+ * at it, so when it is missing the page's strongest proof is a 404.
+ *
+ * It is NOT audited here. Building it costs a full audit of the demo library, and
+ * on a free instance with no disk that was being bought again on every deploy and
+ * every wake from idle — the largest line on the bill, and invisible, because
+ * nobody asked it to run. So the audit happens once, on a developer's machine, via
+ * `npm run build:sample`, and the result is committed. Boot only reads a file.
  */
 export const SAMPLE_RUN_ID = "sample";
 
-function collect(root: string): RawFile[] {
-  const out: RawFile[] = [];
-  const walk = (dir: string): void => {
-    for (const entry of readdirSync(dir, { withFileTypes: true })) {
-      const full = join(dir, entry.name);
-      if (entry.isDirectory()) walk(full);
-      else if (statSync(full).isFile()) {
-        out.push({ path: relative(root, full).split("\\").join("/"), data: readFileSync(full) });
-      }
-    }
-  };
-  walk(root);
-  return out;
-}
+export const SAMPLE_PATH = new URL("../../fixtures/sample-report.json", import.meta.url).pathname;
 
 /**
- * Building the sample costs a full audit of the demo library — eight skills and a
- * library pass, about $0.50 — and on free hosting it was paying that on every
- * restart. The run is stored in /tmp and so is the review cache, so a restart
- * wipes both and the next boot buys all nine calls again. With six deploys in a
- * day and an instance that sleeps whenever nobody is looking, that quietly became
- * the largest line on the bill, and it was invisible because nobody asked it to run.
- *
- * So it is off unless asked for. Set SCAN_SAMPLE=1 to build it, on a deploy where
- * you want it rebuilt, and unset it afterwards.
+ * A sample built by an older engine is worse than no sample. The report page reads
+ * fields that arrived with the audit rewrite — a 1.0 result has no `audit` block at
+ * all — so serving a stale one throws on render instead of 404ing, and the visitor
+ * gets a stack trace where the proof was meant to be. Refuse, loudly, and say what
+ * to run.
  */
-export async function ensureSampleRun(): Promise<void> {
+export function ensureSampleRun(): void {
   if (getRun(SAMPLE_RUN_ID)) return;
-  if (process.env["SCAN_SAMPLE"] !== "1") return;
-  if (!reviewEnabled()) {
-    console.warn("[sample] no ANTHROPIC_API_KEY — the example report is not built, rather than published empty.");
+  if (!existsSync(SAMPLE_PATH)) {
+    console.warn(`[sample] fixtures/sample-report.json is missing — /p/sample will 404. Run: npm run build:sample`);
     return;
   }
+  let result: ScanResult;
   try {
-    const root = new URL("../../fixtures/demo-library", import.meta.url).pathname;
-    const result = await runScan({
-      files: collect(root),
-      source: { kind: "upload", label: "example-skill-library" },
-    });
-    // A sample where nothing could be audited is the most misleading page on the
-    // site — it is the one visitors read to decide whether this tool does anything.
-    if (result.audit.ran && result.audit.reviewed === 0) {
-      console.warn(`[sample] every skill failed to audit (${result.audit.failures[0]?.reason ?? "unknown"}) — not publishing an empty example.`);
-      return;
-    }
-    putRun({ ...result, runId: SAMPLE_RUN_ID }, "sample-session", null);
-    setPublic(SAMPLE_RUN_ID, true);
+    result = JSON.parse(readFileSync(SAMPLE_PATH, "utf8")) as ScanResult;
   } catch (err) {
-    console.warn(`[sample] could not build the example report: ${(err as Error).message}`);
+    console.warn(`[sample] fixtures/sample-report.json could not be parsed: ${(err as Error).message}`);
+    return;
   }
+  if (result.engineVersion !== ENGINE_VERSION) {
+    console.warn(
+      `[sample] the committed sample is ${result.engineVersion} but this engine is ${ENGINE_VERSION} — not serving a report`
+        + ` the page cannot render. Rebuild it: npm run build:sample`,
+    );
+    return;
+  }
+  putRun({ ...result, runId: SAMPLE_RUN_ID }, "sample-session", null);
+  setPublic(SAMPLE_RUN_ID, true);
+  console.log(`[sample] /p/sample ready — ${result.totals.findings} findings across ${result.totals.skills} skills, no model calls.`);
 }
